@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 
   <title>TM LGSR Checker & Corrector</title>
 
@@ -109,14 +109,24 @@ textarea {
       font-size: 0.9rem;
     }
 
-    button {
-      border: none;
-      border-radius: 12px;
-      padding: 11px 14px;
-      font-weight: bold;
-      cursor: pointer;
-      transition: 0.2s ease;
-    }
+   button {
+  border: none;
+  border-radius: 12px;
+  padding: 11px 14px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: 0.2s ease;
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.adjust-panel button,
+.page-controls button,
+.issue-actions button {
+  min-height: 46px;
+  touch-action: manipulation;
+}
 
     .primary-btn {
       background: var(--primary);
@@ -565,11 +575,12 @@ button {
     let fileName = "corrected-certificate.pdf";
 
     let draggingCorrection = null;
-    let dragStartClientX = 0;
-    let dragStartClientY = 0;
-    let dragStartPdfX = 0;
-    let dragStartPdfY = 0;
-    let activeIssueHighlightId = null;
+let dragStartClientX = 0;
+let dragStartClientY = 0;
+let dragStartPdfX = 0;
+let dragStartPdfY = 0;
+let touchDragLiftPixels = 0;
+let activeIssueHighlightId = null;
 let resolvedIssueIds = [];
     
     const pdfUpload = document.getElementById("pdfUpload");
@@ -1506,54 +1517,65 @@ return corrections.find(correction => correction.id === id);
     }
 
     function startDragCorrection(event) {
-      event.preventDefault();
-      event.stopPropagation();
+  event.preventDefault();
+  event.stopPropagation();
 
-      const correctionId = event.target.dataset.id;
-      const correction = corrections.find(item => item.id === correctionId);
+  const correctionId = event.target.dataset.id;
+  const correction = corrections.find(item => item.id === correctionId);
 
-      if (!correction) return;
+  if (!correction) return;
 
-      selectedCorrectionId = correctionId;
-      draggingCorrection = correction;
+  selectedCorrectionId = correctionId;
+  draggingCorrection = correction;
 
-      dragStartClientX = event.clientX;
-      dragStartClientY = event.clientY;
-      dragStartPdfX = correction.x;
-      dragStartPdfY = correction.y;
+  dragStartClientX = event.clientX;
+  dragStartClientY = event.clientY;
+  dragStartPdfX = correction.x;
+  dragStartPdfY = correction.y;
 
-      event.target.setPointerCapture(event.pointerId);
+  /*
+    iPad/touch improvement:
+    When dragging with a finger, lift the patch slightly above the finger
+    so the user can see exactly where it is being positioned.
+  */
+  touchDragLiftPixels = event.pointerType === "touch" ? 60 : 0;
 
-      document.addEventListener("pointermove", dragCorrection);
-      document.addEventListener("pointerup", stopDragCorrection);
+  event.target.setPointerCapture(event.pointerId);
 
-      renderCorrectionPatches();
-      updateCorrectionList();
-    }
+  document.addEventListener("pointermove", dragCorrection);
+  document.addEventListener("pointerup", stopDragCorrection);
+
+  renderCorrectionPatches();
+  updateCorrectionList();
+}
 
     function dragCorrection(event) {
-      if (!draggingCorrection || !currentViewport) return;
+  if (!draggingCorrection || !currentViewport) return;
 
-      const rect = canvas.getBoundingClientRect();
-      const pdfWidth = currentViewport.width / renderScale;
-      const pdfHeight = currentViewport.height / renderScale;
+  event.preventDefault();
 
-      const deltaX = event.clientX - dragStartClientX;
-      const deltaY = event.clientY - dragStartClientY;
+  const rect = canvas.getBoundingClientRect();
+  const pdfWidth = currentViewport.width / renderScale;
+  const pdfHeight = currentViewport.height / renderScale;
 
-      const pdfDeltaX = (deltaX / rect.width) * pdfWidth;
-      const pdfDeltaY = (deltaY / rect.height) * pdfHeight;
+  const deltaX = event.clientX - dragStartClientX;
+  const deltaY = event.clientY - dragStartClientY;
 
-      draggingCorrection.x = dragStartPdfX + pdfDeltaX;
-      draggingCorrection.y = dragStartPdfY - pdfDeltaY;
+  const pdfDeltaX = (deltaX / rect.width) * pdfWidth;
+  const pdfDeltaY = (deltaY / rect.height) * pdfHeight;
+  const touchLiftPdfY = (touchDragLiftPixels / rect.height) * pdfHeight;
 
-      renderCorrectionPatches();
-    }
+  draggingCorrection.x = dragStartPdfX + pdfDeltaX;
+  draggingCorrection.y = dragStartPdfY - pdfDeltaY + touchLiftPdfY;
+
+  renderCorrectionPatches();
+}
 
     function stopDragCorrection() {
       if (!draggingCorrection) return;
 
       draggingCorrection = null;
+touchDragLiftPixels = 0;
 
       document.removeEventListener("pointermove", dragCorrection);
       document.removeEventListener("pointerup", stopDragCorrection);
