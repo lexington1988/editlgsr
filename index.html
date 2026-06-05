@@ -3,118 +3,1838 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Boiler Service Checklist</title>
-  <meta name="theme-color" content="#8a2be2" />
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+
+  <title>TM LGSR Checker & Corrector</title>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+
   <style>
+    :root {
+      --primary: #6a1b9a;
+      --primary-dark: #4a116d;
+      --bg: #f4f1f8;
+      --card: #ffffff;
+      --text: #222;
+      --muted: #666;
+      --border: #ddd;
+      --danger: #c62828;
+      --warning: #ef6c00;
+      --success: #2e7d32;
+      --blue: #1565c0;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
     body {
-      font-family: 'Roboto', sans-serif;
-      background-color: #f9f9f9;
-      color: #333;
       margin: 0;
-      padding: 20px;
-      display: flex;
-      justify-content: center;
+      font-family: Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      padding: 12px;
     }
 
     .container {
-      max-width: 640px;
-      width: 100%;
-      background: #fff;
-      padding: 20px;
-      border-radius: 12px;
-      box-shadow: 0 0 12px rgba(0,0,0,0.1);
-      border-top: 4px solid #8a2be2;
+      max-width: 1200px;
+      margin: 0 auto;
+      background: var(--card);
+      border-radius: 18px;
+      padding: 18px;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
     }
 
-    h2 {
+    h1 {
+      margin: 0;
       text-align: center;
-      color: #8a2be2;
-      margin-bottom: 20px;
+      color: var(--primary);
+      font-size: 1.7rem;
     }
 
-    ul.checklist {
-      list-style: none;
-      padding: 0;
+    .subtitle {
+      text-align: center;
+      color: var(--muted);
+      margin: 8px 0 18px;
+      line-height: 1.4;
     }
 
-    ul.checklist li {
-      border-bottom: 1px solid #eee;
-      padding: 10px 0;
-    }
-
-    ul.checklist li:last-child {
-      border-bottom: none;
-    }
-
-    label.check-label {
+    .top-actions,
+    .edit-panel,
+    .page-controls,
+    .adjust-panel,
+    .preset-row {
       display: flex;
-      align-items: flex-start;
       gap: 10px;
-      cursor: pointer;
+      flex-wrap: wrap;
+      align-items: center;
+      margin-bottom: 14px;
     }
 
-    input[type="checkbox"] {
-      accent-color: #8a2be2;
-      margin-top: 4px;
+    input,
+    select,
+    button {
+      font-family: inherit;
+      font-size: 1rem;
+    }
+textarea {
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  min-width: 180px;
+  min-height: 44px;
+  font-family: inherit;
+  font-size: 1rem;
+  resize: vertical;
+}
+    input[type="file"] {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: #fff;
     }
 
-    .checked label.check-label {
-      text-decoration: line-through;
-      color: #888;
+    input[type="text"],
+    input[type="number"],
+    select {
+      padding: 10px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      min-width: 130px;
     }
 
-    .reset-btn {
-      display: block;
-      margin: 20px auto 0;
-      padding: 10px 20px;
-      background-color: #8a2be2;
-      color: white;
+    label {
+      font-weight: bold;
+      font-size: 0.9rem;
+    }
+
+    button {
       border: none;
-      border-radius: 6px;
+      border-radius: 12px;
+      padding: 11px 14px;
       font-weight: bold;
       cursor: pointer;
+      transition: 0.2s ease;
     }
 
-    .reset-btn:hover {
-      background-color: #7221c2;
+    .primary-btn {
+      background: var(--primary);
+      color: #fff;
+    }
+
+    .primary-btn:hover {
+      background: var(--primary-dark);
+    }
+
+    .secondary-btn {
+      background: #eee;
+      color: #222;
+    }
+
+    .secondary-btn:hover {
+      background: #ddd;
+    }
+
+    .danger-btn {
+      background: #ffebee;
+      color: var(--danger);
+      border: 1px solid #ef9a9a;
+    }
+
+    .green-btn {
+      background: #e8f5e9;
+      color: var(--success);
+      border: 1px solid #a5d6a7;
+    }
+
+    .blue-btn {
+      background: #e3f2fd;
+      color: var(--blue);
+      border: 1px solid #90caf9;
+    }
+
+    .status {
+      display: none;
+      padding: 12px;
+      border-radius: 12px;
+      margin-bottom: 14px;
+      font-weight: bold;
+      text-align: center;
+    }
+
+    .status.success {
+      display: block;
+      background: #e8f5e9;
+      color: var(--success);
+      border: 1px solid #a5d6a7;
+    }
+
+    .status.error {
+      display: block;
+      background: #ffebee;
+      color: var(--danger);
+      border: 1px solid #ef9a9a;
+    }
+
+    .status.warning {
+      display: block;
+      background: #fff3e0;
+      color: var(--warning);
+      border: 1px solid #ffcc80;
+    }
+
+    .main-grid {
+      display: grid;
+      grid-template-columns: 1fr 360px;
+      gap: 16px;
+      align-items: start;
+    }
+
+    .viewer-card,
+    .side-card {
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 12px;
+      background: #fff;
+    }
+
+    .pdf-stage {
+      width: 100%;
+      overflow: auto;
+      background: #ddd;
+      border-radius: 12px;
+      padding: 10px;
+      max-height: 75vh;
+      text-align: center;
+    }
+
+    .page-wrap {
+      position: relative;
+      display: inline-block;
+      background: white;
+      box-shadow: 0 3px 12px rgba(0, 0, 0, 0.18);
+    }
+
+    canvas {
+      display: block;
+      max-width: 100%;
+      height: auto;
+    }
+
+    .patch {
+      position: absolute;
+      background: rgba(255, 255, 255, 0.96);
+      border: 1px dashed rgba(106, 27, 154, 0.85);
+      color: #000;
+      cursor: grab;
+      touch-action: none;
+      z-index: 3;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      overflow: hidden;
+      white-space: pre-wrap;
+      line-height: 1.05;
+      font-weight: bold;
+      user-select: none;
+    }
+
+    .patch.selected {
+      outline: 2px solid var(--primary);
+      border-color: var(--primary);
+      cursor: grabbing;
+      background: rgba(255, 255, 255, 1);
+    }
+.issue-highlight {
+  position: absolute;
+  border: 2px solid #d32f2f;
+  background: rgba(211, 47, 47, 0.08);
+  pointer-events: none;
+  z-index: 2;
+  box-sizing: border-box;
+}
+
+.issue-highlight-label {
+  position: absolute;
+  top: -18px;
+  right: -2px;
+  background: #d32f2f;
+  color: #fff;
+  font-size: 11px;
+  font-weight: bold;
+  line-height: 1;
+  padding: 3px 6px;
+  border-radius: 10px;
+  white-space: nowrap;
+}
+
+.issue-highlight.active {
+  box-shadow: 0 0 0 3px rgba(211, 47, 47, 0.2);
+}
+    .side-card h2 {
+      margin: 0 0 10px;
+      color: var(--primary-dark);
+      font-size: 1.1rem;
+    }
+
+    .issues {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    .issue {
+      border-radius: 10px;
+      padding: 10px;
+      font-size: 0.92rem;
+      line-height: 1.35;
+    }
+
+    .issue.fail {
+      background: #ffebee;
+      border: 1px solid #ef9a9a;
+      color: var(--danger);
+    }
+
+    .issue.warn {
+      background: #fff3e0;
+      border: 1px solid #ffcc80;
+      color: #7a3d00;
+    }
+
+    .issue.pass {
+      background: #e8f5e9;
+      border: 1px solid #a5d6a7;
+      color: var(--success);
+    }
+
+    .issue.info {
+      background: #e3f2fd;
+      border: 1px solid #90caf9;
+      color: var(--blue);
+    }
+
+    .issue-title {
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+
+    .issue-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+
+    .issue-actions button {
+      padding: 8px 10px;
+      font-size: 0.88rem;
+    }
+
+    .small-text {
+      font-size: 0.85rem;
+      color: var(--muted);
+      line-height: 1.35;
+    }
+
+    .correction-list {
+      margin-top: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: 230px;
+      overflow-y: auto;
+    }
+
+    .correction-item {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 9px;
+      background: #fafafa;
+      font-size: 0.9rem;
+      cursor: pointer;
+    }
+
+    .correction-item.selected {
+      border-color: var(--primary);
+      background: #f3e5f5;
+    }
+
+    .correction-item strong {
+      color: var(--primary-dark);
+    }
+
+    .text-preview {
+      max-height: 140px;
+      overflow-y: auto;
+      background: #f7f7f7;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px;
+      font-size: 0.78rem;
+      white-space: pre-wrap;
+    }
+
+    .quick-help {
+      background: #f7f7f7;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 10px;
+      margin-bottom: 14px;
+      font-size: 0.9rem;
+      line-height: 1.4;
+    }
+
+    .adjust-panel {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 10px;
+      background: #fafafa;
+      margin-bottom: 14px;
+    }
+
+    .adjust-group {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .adjust-group button {
+      min-width: 42px;
+      padding: 9px 10px;
+    }
+
+    .preset-row button {
+      padding: 8px 10px;
+      font-size: 0.86rem;
+    }
+
+    @media (max-width: 950px) {
+      .main-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .edit-panel,
+      .page-controls,
+      .adjust-panel,
+      .preset-row {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      input[type="text"],
+input[type="number"],
+select,
+textarea,
+button {
+  width: 100%;
+}
+
+      h1 {
+        font-size: 1.4rem;
+      }
+
+      .pdf-stage {
+        max-height: 65vh;
+      }
+
+      .issue-actions,
+      .adjust-group {
+        flex-direction: column;
+        align-items: stretch;
+      }
     }
   </style>
 </head>
+
 <body>
   <div class="container">
-    <h2>Boiler Service Checklist</h2>
-    <ul class="checklist">
-      <li><label class="check-label"><input type="checkbox" onchange="toggleCheck(this)">Check Manufacturer's Instructions for service requirements and relevant boiler readings</label></li>
-      <li><label class="check-label"><input type="checkbox" onchange="toggleCheck(this)">Visually Inspect Boiler, Flue and Gas System</label></li>
-      <li><label class="check-label"><input type="checkbox" onchange="toggleCheck(this)">Check Fuse</label></li>
-      <li><label class="check-label"><input type="checkbox" onchange="toggleCheck(this)">Perform Electrical Safe To Touch Test and Safe Isolation To TB118a (Prove, Test, Prove)</label></li>
-      <li><label class="check-label"><input type="checkbox" onchange="toggleCheck(this)">Perform Relevant Boiler Service Procedure As Per Manufacturer's Instructions</label></li>
-      <li><label class="check-label"><input type="checkbox" onchange="toggleCheck(this)">Visually Inspect Inside Of Boiler (Cable Grommets, Room Seal, Burner Insulation etc.)</label></li>
-      <li><label class="check-label"><input type="checkbox" onchange="toggleCheck(this)">Perform Combustion Analysis Comparing To Manufacturer's Instructions (Case On)</label></li>
-      <li><label class="check-label"><input type="checkbox" onchange="toggleCheck(this)">Perform Gas Rate And Compare To Manufacturer's Instructions</label></li>
-      <li><label class="check-label"><input type="checkbox" onchange="toggleCheck(this)">Test FFD</label></li>
-      <li><label class="check-label"><input type="checkbox" onchange="toggleCheck(this)">Perform Full Tightness Test Procedure (While Boiler In Lockout State)</label></li>
-      <li><label class="check-label"><input type="checkbox" onchange="toggleCheck(this)">Spray Test Nipple And ECV Barrel</label></li>
-      <li><label class="check-label"><input type="checkbox" onchange="toggleCheck(this)">Test Alarms And Check Expiry Dates</label></li>
-      <li><label class="check-label"><input type="checkbox" onchange="toggleCheck(this)">Ensure Boiler Has Been Reassembled Correctly, Flue Sample Point Has Been Replaced And That Appliance Is Left In Working Order</label></li>
-      <li><label class="check-label"><input type="checkbox" onchange="toggleCheck(this)">Inspect Gas Meter Test Nipple Final Time To Ensure No Leaks Are Left</label></li>
-      <li><label class="check-label"><input type="checkbox" onchange="toggleCheck(this)">Collect Tenants Contact Details</label></li>
-    </ul>
-    <button class="reset-btn" onclick="resetChecklist()">Reset</button>
+    <h1>TM LGSR Checker & Corrector</h1>
+    <p class="subtitle">
+      Upload the TM LGSR PDF, check for likely mistakes, add clean correction patches, then save a corrected copy.
+    </p>
+
+    <div class="top-actions">
+      <input id="pdfUpload" type="file" accept="application/pdf" />
+      <button class="primary-btn" onclick="runChecks()">Check PDF</button>
+      <button class="primary-btn" onclick="saveCorrectedPDF()">Save Corrected PDF</button>
+      <button class="secondary-btn" onclick="clearAll()">Clear</button>
+    </div>
+
+    <div id="status" class="status"></div>
+
+    <div class="edit-panel">
+      <label for="correctionText">Correction Text</label>
+     <textarea id="correctionText" placeholder="Enter correction text here"></textarea>
+
+      <label for="fontSize">Font</label>
+      <input id="fontSize" type="number" value="7" min="4" max="24" />
+
+      <label for="patchWidth">Patch Width</label>
+      <input id="patchWidth" type="number" value="30" min="5" max="300" />
+
+      <label for="patchHeight">Patch Height</label>
+      <input id="patchHeight" type="number" value="10" min="5" max="120" />
+
+      <button class="blue-btn" onclick="createPatchFromInputsAtCenter()">Add Patch Centre</button>
+    </div>
+
+    <div class="main-grid">
+      <div class="viewer-card">
+        <div class="page-controls">
+          <button class="secondary-btn" onclick="prevPage()">Previous Page</button>
+          <span id="pageInfo">No PDF loaded</span>
+          <button class="secondary-btn" onclick="nextPage()">Next Page</button>
+          <button class="danger-btn" onclick="deleteSelectedCorrection()">Delete Selected Patch</button>
+        </div>
+
+        <div class="adjust-panel">
+          <div class="adjust-group">
+            <strong>Selected patch:</strong>
+            <button onclick="nudgeSelected(0, 1)">↑</button>
+            <button onclick="nudgeSelected(0, -1)">↓</button>
+            <button onclick="nudgeSelected(-1, 0)">←</button>
+            <button onclick="nudgeSelected(1, 0)">→</button>
+          </div>
+
+          <div class="adjust-group">
+            <strong>Size:</strong>
+            <button onclick="resizeSelected(-2, 0)">W-</button>
+            <button onclick="resizeSelected(2, 0)">W+</button>
+            <button onclick="resizeSelected(0, -1)">H-</button>
+            <button onclick="resizeSelected(0, 1)">H+</button>
+          </div>
+
+          <div class="adjust-group">
+            <strong>Text:</strong>
+            <button onclick="changeFontSize(-1)">A-</button>
+            <button onclick="changeFontSize(1)">A+</button>
+          </div>
+        </div>
+
+        <div class="pdf-stage">
+          <div id="pageWrap" class="page-wrap">
+            <canvas id="pdfCanvas"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="side-card">
+        <h2>Detected Issues</h2>
+
+        <div class="quick-help">
+          New patch mode covers the old value with a clean white rectangle and centres the replacement text inside it.
+          Click the PDF to place a patch, then drag or nudge it into position.
+        </div>
+
+        <div id="issues" class="issues">
+          <div class="issue warn">Upload a PDF and press “Check PDF”.</div>
+        </div>
+
+        <h2>Correction Patches</h2>
+        <p class="small-text">
+          Select a patch from the list or by clicking it on the PDF. Use the adjustment buttons for fine control.
+        </p>
+
+        <div id="correctionList" class="correction-list"></div>
+
+        <h2>Extracted Text</h2>
+        <div id="textPreview" class="text-preview">No text extracted yet.</div>
+      </div>
+    </div>
   </div>
 
   <script>
-    function toggleCheck(checkbox) {
-      const li = checkbox.closest('li');
-      li.classList.toggle('checked', checkbox.checked);
+    pdfjsLib.GlobalWorkerOptions.workerSrc =
+      "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+
+    let originalPdfBytes = null;
+    let pdfDoc = null;
+    let currentPage = 1;
+    let totalPages = 0;
+    let currentViewport = null;
+    let renderScale = 1.4;
+    let extractedText = "";
+    let corrections = [];
+    let detectedIssues = [];
+    let selectedCorrectionId = null;
+    let fileName = "corrected-certificate.pdf";
+
+    let draggingCorrection = null;
+    let dragStartClientX = 0;
+    let dragStartClientY = 0;
+    let dragStartPdfX = 0;
+    let dragStartPdfY = 0;
+    let activeIssueHighlightId = null;
+let resolvedIssueIds = [];
+    
+    const pdfUpload = document.getElementById("pdfUpload");
+    const canvas = document.getElementById("pdfCanvas");
+    const ctx = canvas.getContext("2d");
+    const pageWrap = document.getElementById("pageWrap");
+
+    pdfUpload.addEventListener("change", loadPDF);
+
+    pageWrap.addEventListener("click", function(event) {
+      if (!pdfDoc) return;
+
+      if (event.target.classList.contains("patch")) {
+        selectedCorrectionId = event.target.dataset.id;
+        renderCorrectionPatches();
+        updateCorrectionList();
+        return;
+      }
+
+      const text = document.getElementById("correctionText").value.trim();
+
+      if (!text) {
+        showStatus("Type the correction text first, then click the PDF cell.", "warning");
+        return;
+      }
+
+      const position = getPdfPositionFromClick(event);
+
+      if (!position) return;
+
+      const patchWidth = Number(document.getElementById("patchWidth").value) || 30;
+      const patchHeight = Number(document.getElementById("patchHeight").value) || 10;
+      const fontSize = Number(document.getElementById("fontSize").value) || 7;
+
+      const newPatch = addCorrection({
+  page: currentPage,
+  text,
+  x: position.pdfX - patchWidth / 2,
+  y: position.pdfY - patchHeight / 2,
+  width: patchWidth,
+  height: patchHeight,
+  fontSize,
+  source: "Manual patch"
+});
+
+resolveIssuesCoveredByPatch(newPatch);
+
+renderIssues(detectedIssues);
+renderIssueHighlights();
+
+showStatus("Correction patch added.", "success");
+    });
+
+    function createPatchFromInputsAtCenter() {
+      if (!pdfDoc || !currentViewport) {
+        showStatus("Upload a PDF first.", "error");
+        return;
+      }
+
+      const text = document.getElementById("correctionText").value.trim();
+
+      if (!text) {
+        showStatus("Type correction text first.", "warning");
+        return;
+      }
+
+      const pdfWidth = currentViewport.width / renderScale;
+      const pdfHeight = currentViewport.height / renderScale;
+      const patchWidth = Number(document.getElementById("patchWidth").value) || 30;
+      const patchHeight = Number(document.getElementById("patchHeight").value) || 10;
+      const fontSize = Number(document.getElementById("fontSize").value) || 7;
+
+     const newPatch = addCorrection({
+  page: currentPage,
+  text,
+  x: pdfWidth / 2 - patchWidth / 2,
+  y: pdfHeight / 2 - patchHeight / 2,
+  width: patchWidth,
+  height: patchHeight,
+  fontSize,
+  source: "Manual patch"
+});
+
+resolveIssuesCoveredByPatch(newPatch);
+
+renderIssues(detectedIssues);
+renderIssueHighlights();
+
+showStatus("Patch added to centre. Drag it into place.", "success");
     }
 
-    function resetChecklist() {
-      document.querySelectorAll('.checklist input[type="checkbox"]').forEach(checkbox => {
-        checkbox.checked = false;
-        checkbox.closest('li').classList.remove('checked');
+    async function loadPDF(event) {
+      const file = event.target.files[0];
+
+      if (!file) return;
+
+      if (file.type !== "application/pdf") {
+        showStatus("Please upload a PDF file.", "error");
+        return;
+      }
+
+      fileName = file.name.replace(/\.pdf$/i, "") + "-corrected.pdf";
+
+      originalPdfBytes = await file.arrayBuffer();
+      pdfDoc = await pdfjsLib.getDocument({ data: originalPdfBytes.slice(0) }).promise;
+
+      currentPage = 1;
+      totalPages = pdfDoc.numPages;
+      corrections = [];
+      detectedIssues = [];
+resolvedIssueIds = [];
+activeIssueHighlightId = null;
+selectedCorrectionId = null;
+
+      await extractTextFromPDF();
+      await renderPage();
+
+      document.getElementById("textPreview").textContent =
+        extractedText || "No selectable text found in this PDF.";
+
+      document.getElementById("issues").innerHTML =
+        `<div class="issue warn">PDF loaded. Press “Check PDF” to scan for possible TM LGSR issues.</div>`;
+
+      updatePageInfo();
+      updateCorrectionList();
+
+      showStatus("PDF loaded successfully.", "success");
+    }
+
+    async function renderPage() {
+      if (!pdfDoc) return;
+
+      const page = await pdfDoc.getPage(currentPage);
+      currentViewport = page.getViewport({ scale: renderScale });
+
+      canvas.width = currentViewport.width;
+      canvas.height = currentViewport.height;
+
+      await page.render({
+        canvasContext: ctx,
+        viewport: currentViewport
+      }).promise;
+
+      pageWrap.style.width = canvas.width + "px";
+      pageWrap.style.height = canvas.height + "px";
+
+      renderIssueHighlights();
+renderCorrectionPatches();
+updatePageInfo();
+    }
+
+    async function extractTextFromPDF() {
+      extractedText = "";
+
+      for (let i = 1; i <= pdfDoc.numPages; i++) {
+        const page = await pdfDoc.getPage(i);
+        const textContent = await page.getTextContent();
+        const pageText = textContent.items.map(item => item.str).join(" ");
+
+        extractedText += `\n\n--- Page ${i} ---\n${pageText}`;
+      }
+
+      extractedText = extractedText.trim();
+    }
+
+  async function runChecks() {
+  if (!pdfDoc) {
+    showStatus("Upload a PDF first.", "error");
+    return;
+  }
+
+  detectedIssues = [];
+  resolvedIssueIds = [];
+  activeIssueHighlightId = null;
+
+  const text = normaliseText(extractedText);
+
+  checkAdditionalDetailsYesIssues(text);
+checkCarbonMonoxideDetectorListed(text);
+await checkSignatureBoxes();
+checkCOCO2RatioCalculations();
+checkRSFlueFlowIssue(text);
+checkBasicExtractionQuality();
+
+  renderIssues(detectedIssues);
+  renderIssueHighlights();
+
+  if (detectedIssues.length === 0) {
+    showStatus("No obvious TM LGSR issues detected.", "success");
+  } else {
+    showStatus(`${detectedIssues.length} possible issue(s) found.`, "warning");
+  }
+}
+
+    function checkAdditionalDetailsYesIssues(text) {
+  const additionalDetailsRules = [
+    {
+      id: "gas-tightness-test",
+      label: "Gas Tightness Test Satisfactory",
+      patterns: [
+        /gas tightness test satisfactory\s+(no|n\/a|na)/i
+      ],
+      xPercent: 0.715,
+      yPercent: 0.843
+    },
+    {
+      id: "pipework-visual-inspection",
+      label: "Gas installation pipework visual inspection satisfactory",
+      patterns: [
+        /gas installation pipework visual inspection satisfactory\s+(no|n\/a|na)/i
+      ],
+      xPercent: 0.715,
+      yPercent: 0.815
+    },
+    {
+      id: "equipotential-bonding",
+      label: "Equipotential bonding",
+      patterns: [
+        /equipotential bonding\s+(no|n\/a|na)/i
+      ],
+      xPercent: 0.715,
+      yPercent: 0.776
+    },
+    {
+      id: "co-alarm",
+      label: "CO alarm fitted and working",
+      patterns: [
+        /co alarm fitted and working\s+(no|n\/a|na)/i
+      ],
+      xPercent: 0.715,
+      yPercent: 0.750
+    },
+    {
+      id: "gas-meter-present",
+      label: "Gas meter present",
+      patterns: [
+        /gas meter present\s+(no|n\/a|na)/i
+      ],
+      xPercent: 0.715,
+      yPercent: 0.724
+    },
+    {
+      id: "emergency-control-valve",
+      label: "Emergency Control Valve Available",
+      patterns: [
+        /emergency control valve available\s+(no|n\/a|na)/i
+      ],
+      xPercent: 0.952,
+      yPercent: 0.843
+    },
+    {
+      id: "installation-pass",
+      label: "Installation pass",
+      patterns: [
+        /installation pass\s+(no|n\/a|na)/i,
+        /installationpass\s+(no|n\/a|na)/i
+      ],
+      xPercent: 0.952,
+      yPercent: 0.776
+    },
+    {
+      id: "smoke-alarm",
+      label: "Smoke alarm fitted and working",
+      patterns: [
+        /smoke alarm fitted and working\s+(no|n\/a|na)/i
+      ],
+      xPercent: 0.952,
+      yPercent: 0.750
+    }
+  ];
+
+  additionalDetailsRules.forEach((rule) => {
+    const matchedPattern = rule.patterns.find(pattern => pattern.test(extractedText));
+
+    if (!matchedPattern) return;
+
+    const currentValueMatch = extractedText.match(matchedPattern);
+    const currentValue = currentValueMatch && currentValueMatch[1]
+      ? currentValueMatch[1].toUpperCase()
+      : "Not YES";
+
+    detectedIssues.push({
+      id: `additional-details-${rule.id}`,
+      type: "fail",
+      title: `${rule.label} is not marked YES`,
+      message:
+        `${rule.label} should normally be marked YES in the Additional Details section. Review this field and correct if appropriate.`,
+      currentValue,
+      suggestedValue: "YES",
+      fixLabel: "Apply YES patch",
+      highlight: {
+        page: 1,
+        xPercent: rule.xPercent - 0.025,
+        yPercent: rule.yPercent,
+        width: 0.05,
+        height: 0.035,
+        label: `Issue ${detectedIssues.length + 1}`
+      },
+      correction: {
+        page: 1,
+        text: "YES",
+        xPercent: rule.xPercent,
+        yPercent: rule.yPercent,
+        width: 30,
+        height: 10,
+        fontSize: 7,
+        source: `Auto patch: ${rule.label}`
+      }
+    });
+  });
+}
+function checkCarbonMonoxideDetectorListed(text) {
+  const hasCarbonMonoxideDetector =
+    /carbon\s+monoxide\s+detector/i.test(extractedText);
+
+  if (hasCarbonMonoxideDetector) return;
+
+  detectedIssues.push({
+    id: "carbon-monoxide-detector-missing",
+    type: "fail",
+    title: "Carbon Monoxide Detector is not listed",
+    message:
+      "At least one appliance row should list Carbon Monoxide Detector in the Appliance Type column. No Carbon Monoxide Detector row was detected on this certificate.",
+    currentValue: "Not found",
+    suggestedValue: "Carbon Monoxide Detector",
+    fixLabel: "",
+    highlight: {
+      page: 1,
+      xPercent: 0.105,
+      yPercent: 0.545,
+      width: 0.085,
+      height: 0.18,
+      label: `Issue ${detectedIssues.length + 1}`
+    },
+    correction: null
+  });
+}
+ async function checkSignatureBoxes() {
+  if (!pdfDoc) return;
+
+  const page = await pdfDoc.getPage(1);
+  const scale = 2;
+  const viewport = page.getViewport({ scale });
+
+  const signatureCanvas = document.createElement("canvas");
+  const signatureCtx = signatureCanvas.getContext("2d");
+
+  signatureCanvas.width = viewport.width;
+  signatureCanvas.height = viewport.height;
+
+  await page.render({
+    canvasContext: signatureCtx,
+    viewport
+  }).promise;
+
+  const signatureBoxes = [
+    {
+      id: "customer-signature",
+      label: "Customer's Signature",
+      message: "The Customer's Signature box appears to be blank.",
+      region: {
+        left: 0.425,
+        top: 0.595,
+        width: 0.150,
+        height: 0.050
+      },
+      highlight: {
+        page: 1,
+        xPercent: 0.415,
+        yPercent: 0.398,
+        width: 0.190,
+        height: 0.080,
+        label: `Issue ${detectedIssues.length + 1}`
+      }
+    },
+    {
+      id: "operative-signature",
+      label: "Operative's Signature",
+      message: "The Operative's Signature box appears to be blank.",
+      region: {
+        left: 0.815,
+        top: 0.595,
+        width: 0.150,
+        height: 0.050
+      },
+      highlight: {
+        page: 1,
+        xPercent: 0.795,
+        yPercent: 0.220,
+        width: 0.190,
+        height: 0.080,
+        label: `Issue ${detectedIssues.length + 1}`
+      }
+    }
+  ];
+
+  signatureBoxes.forEach(box => {
+    const hasSignature = regionHasSignatureInk(signatureCanvas, box.region);
+
+    if (hasSignature) return;
+
+    detectedIssues.push({
+      id: `missing-${box.id}`,
+      type: "fail",
+      title: `${box.label} appears to be missing`,
+      message: box.message,
+      currentValue: "Blank",
+      suggestedValue: "Signature required",
+      fixLabel: "",
+      highlight: box.highlight,
+      correction: null
+    });
+  });
+}
+  function regionHasSignatureInk(sourceCanvas, region) {
+  const ctx = sourceCanvas.getContext("2d");
+
+  const x = Math.floor(sourceCanvas.width * region.left);
+  const y = Math.floor(sourceCanvas.height * region.top);
+  const width = Math.floor(sourceCanvas.width * region.width);
+  const height = Math.floor(sourceCanvas.height * region.height);
+
+  const imageData = ctx.getImageData(x, y, width, height);
+  const data = imageData.data;
+
+  let darkPixels = 0;
+  let diagonalLikePixels = 0;
+
+  for (let py = 1; py < height - 1; py++) {
+    for (let px = 1; px < width - 1; px++) {
+      const i = (py * width + px) * 4;
+
+      const red = data[i];
+      const green = data[i + 1];
+      const blue = data[i + 2];
+
+      const isDark =
+        red < 190 &&
+        green < 190 &&
+        blue < 190;
+
+      if (!isDark) continue;
+
+      darkPixels++;
+
+      const leftIndex = (py * width + (px - 1)) * 4;
+      const rightIndex = (py * width + (px + 1)) * 4;
+      const upIndex = ((py - 1) * width + px) * 4;
+      const downIndex = ((py + 1) * width + px) * 4;
+
+      const leftDark =
+        data[leftIndex] < 190 &&
+        data[leftIndex + 1] < 190 &&
+        data[leftIndex + 2] < 190;
+
+      const rightDark =
+        data[rightIndex] < 190 &&
+        data[rightIndex + 1] < 190 &&
+        data[rightIndex + 2] < 190;
+
+      const upDark =
+        data[upIndex] < 190 &&
+        data[upIndex + 1] < 190 &&
+        data[upIndex + 2] < 190;
+
+      const downDark =
+        data[downIndex] < 190 &&
+        data[downIndex + 1] < 190 &&
+        data[downIndex + 2] < 190;
+
+      const looksLikeStraightBoxLine =
+        (leftDark && rightDark && !upDark && !downDark) ||
+        (upDark && downDark && !leftDark && !rightDark);
+
+      if (!looksLikeStraightBoxLine) {
+        diagonalLikePixels++;
+      }
+    }
+  }
+
+  return darkPixels > 90 && diagonalLikePixels > 35;
+}
+    function checkCOCO2RatioCalculations() {
+  const ratioTolerance = 0.0001;
+
+  const applianceRowRegex =
+    /(\d+)\s+([A-Za-z ]+)\s+(Combi boiler|Condensing boiler|System boiler|Heat only boiler|Back boiler|Water heater|Gas fire|Fire|Boiler)\s+(.+?)\s+(\d+(?:\.\d+)?)\s+(\d+(?:\.\d+)?)\s+(\d+(?:\.\d+)?)\s+(\d+(?:\.\d+)?)\s+(RS|OF|FL)\s+([A-Za-z0-9.\/]+)\s+(\d+(?:\.\d+)?)\s+(\d+(?:\.\d+)?)/gi;
+
+  let match;
+  let applianceIndex = 0;
+
+  while ((match = applianceRowRegex.exec(extractedText)) !== null) {
+    applianceIndex++;
+
+    const rowNumber = match[1];
+    const location = cleanText(match[2]);
+    const applianceType = cleanText(match[3]);
+
+    const co2Low = parseNumber(match[5]);
+    const co2High = parseNumber(match[6]);
+    const coLow = parseNumber(match[7]);
+    const coHigh = parseNumber(match[8]);
+    const ratioLow = parseNumber(match[11]);
+    const ratioHigh = parseNumber(match[12]);
+
+    const applianceLabel = `${applianceType} row ${rowNumber}${location ? ` (${location})` : ""}`;
+
+    const canCheckLow =
+      isRealNumber(co2Low) &&
+      isRealNumber(coLow) &&
+      isRealNumber(ratioLow) &&
+      co2Low > 0 &&
+      coLow > 0 &&
+      ratioLow > 0;
+
+    if (canCheckLow) {
+      const expectedLow = calculateCOCO2Ratio(coLow, co2Low);
+
+      if (Math.abs(expectedLow - ratioLow) > ratioTolerance) {
+        detectedIssues.push({
+          id: `co-co2-low-ratio-${rowNumber}`,
+          type: "fail",
+          title: `CO/CO₂ low ratio appears incorrect`,
+          message:
+            `${applianceLabel}: CO₂ low is ${co2Low}%, CO low is ${coLow}ppm. Expected low ratio is ${formatRatio(expectedLow)}, but the recorded ratio is ${formatRatio(ratioLow)}.`,
+          currentValue: formatRatio(ratioLow),
+          suggestedValue: formatRatio(expectedLow),
+          fixLabel: "Apply calculated low ratio",
+          highlight: {
+            page: 1,
+            xPercent: 0.512,
+            yPercent: getApproxApplianceRowY(rowNumber),
+            width: 0.055,
+            height: 0.04,
+            label: `Issue ${detectedIssues.length + 1}`
+          },
+          correction: {
+            page: 1,
+            text: formatRatio(expectedLow),
+            xPercent: 0.512,
+            yPercent: getApproxApplianceRowY(rowNumber),
+            width: 42,
+            height: 10,
+            fontSize: 6,
+            source: `Auto patch: CO/CO2 low ratio row ${rowNumber}`
+          }
+        });
+      }
+    }
+
+    const canCheckHigh =
+      isRealNumber(co2High) &&
+      isRealNumber(coHigh) &&
+      isRealNumber(ratioHigh) &&
+      co2High > 0 &&
+      coHigh >= 0 &&
+      ratioHigh >= 0;
+
+    if (canCheckHigh) {
+      const expectedHigh = calculateCOCO2Ratio(coHigh, co2High);
+
+      if (Math.abs(expectedHigh - ratioHigh) > ratioTolerance) {
+        detectedIssues.push({
+          id: `co-co2-high-ratio-${rowNumber}`,
+          type: "fail",
+          title: `CO/CO₂ high ratio appears incorrect`,
+          message:
+            `${applianceLabel}: CO₂ high is ${co2High}%, CO high is ${coHigh}ppm. Expected high ratio is ${formatRatio(expectedHigh)}, but the recorded ratio is ${formatRatio(ratioHigh)}.`,
+          currentValue: formatRatio(ratioHigh),
+          suggestedValue: formatRatio(expectedHigh),
+          fixLabel: "Apply calculated high ratio",
+          highlight: {
+  page: 1,
+  xPercent: 0.517,
+  yPercent: getApproxApplianceRowY(rowNumber),
+  width: 0.040,
+  height: 0.04,
+  label: `Issue ${detectedIssues.length + 1}`
+},
+correction: {
+  page: 1,
+  text: formatRatio(expectedHigh),
+  xPercent: 0.517,
+  yPercent: getApproxApplianceRowY(rowNumber),
+  width: 42,
+  height: 10,
+  fontSize: 6,
+  source: `Auto patch: CO/CO2 high ratio row ${rowNumber}`
+}
+        });
+      }
+    }
+  }
+}
+    function calculateCOCO2Ratio(coPpm, co2Percent) {
+  return coPpm / (co2Percent * 10000);
+}
+
+function formatRatio(value) {
+  if (!isRealNumber(value)) return "";
+
+  const fixed = Number(value).toFixed(4);
+
+  if (fixed === "0.0000" && Number(value) > 0) {
+    return "0.0001";
+  }
+
+  return fixed.replace(/0+$/, "").replace(/\.$/, "");
+}
+
+function parseNumber(value) {
+  const number = Number(String(value || "").trim());
+
+  return Number.isFinite(number) ? number : null;
+}
+
+function isRealNumber(value) {
+  return typeof value === "number" && Number.isFinite(value);
+}
+
+function cleanText(value) {
+  return String(value || "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function getApproxApplianceRowY(rowNumber) {
+  const rowMap = {
+    "1": 0.555,
+    "2": 0.528,
+    "3": 0.502,
+    "4": 0.476
+  };
+
+  return rowMap[String(rowNumber)] || 0.528;
+}
+    function checkRSFlueFlowIssue(text) {
+      const hasRS = /\bRS\b/i.test(extractedText);
+      const possibleRSFlueFlowPass =
+        /RS\s+\d+(\.\d+)?\s+\d+(\.\d+)?\s+\d+(\.\d+)?\s+YES\s+YES\s+PASS\s+PASS\s+NA/i.test(extractedText) ||
+        text.includes("rs 30.64") && text.includes("pass pass na");
+
+      if (hasRS && possibleRSFlueFlowPass) {
+        detectedIssues.push({
+  id: "rs-flue-flow-pass",
+  type: "fail",
+  title: "RS appliance may have Flue Flow Check marked PASS",
+  message:
+    "Room-sealed RS appliances should normally have flue flow/spillage marked as NA, not PASS. Check the affected cell before saving.",
+  currentValue: "PASS",
+  suggestedValue: "NA",
+  fixLabel: "Apply NA patch",
+  highlight: {
+    page: 1,
+    xPercent: 0.715,
+    yPercent: 0.555,
+    width: 0.055,
+    height: 0.055,
+    label: "Issue 2"
+  },
+  correction: {
+    page: 1,
+    text: "NA",
+    xPercent: 0.728,
+    yPercent: 0.455,
+    width: 30,
+    height: 10,
+    fontSize: 7,
+    source: "Auto patch: RS flue flow"
+  }
+});
+      }
+    }
+
+    function checkBasicExtractionQuality() {
+      if (!extractedText || extractedText.length < 50) {
+        detectedIssues.push({
+          id: "low-text-extraction",
+          type: "fail",
+          title: "PDF text could not be read properly",
+          message:
+            "Very little text could be extracted. This may be an image-based PDF, so the checker may not work reliably on this file.",
+          currentValue: "",
+          suggestedValue: "",
+          fixLabel: "",
+          correction: null
+        });
+      }
+    }
+
+  function renderIssues(issues) {
+  const issuesBox = document.getElementById("issues");
+
+  const unresolvedIssues = issues.filter(issue => !resolvedIssueIds.includes(issue.id));
+
+  if (issues.length === 0) {
+    issuesBox.innerHTML = `<div class="issue pass">✅ No obvious TM LGSR issues detected.</div>`;
+    return;
+  }
+
+  if (unresolvedIssues.length === 0) {
+    issuesBox.innerHTML = `<div class="issue pass">✅ All detected issues have been corrected on the preview.</div>`;
+    return;
+  }
+
+  issuesBox.innerHTML = unresolvedIssues.map((issue, index) => {
+    const icon = issue.type === "fail" ? "❌" : issue.type === "warn" ? "⚠️" : "ℹ️";
+
+    const actionButtons = `
+      ${issue.highlight ? `<button class="blue-btn" onclick="focusIssue('${issue.id}')">Show on PDF</button>` : ""}
+      ${issue.correction ? `<button class="green-btn" onclick="applySuggestedFix('${issue.id}')">${escapeHtml(issue.fixLabel)}</button>` : ""}
+    `;
+
+    return `
+      <div class="issue ${issue.type}">
+        <div class="issue-title">${icon} Issue ${index + 1}: ${escapeHtml(issue.title)}</div>
+        <div>${escapeHtml(issue.message)}</div>
+        ${
+          issue.currentValue || issue.suggestedValue
+            ? `<div style="margin-top:6px;">
+                Current: <strong>${escapeHtml(issue.currentValue || "-")}</strong>
+                &nbsp; → &nbsp;
+                Suggested: <strong>${escapeHtml(issue.suggestedValue || "-")}</strong>
+              </div>`
+            : ""
+        }
+        <div class="issue-actions">
+          ${actionButtons}
+        </div>
+      </div>
+    `;
+  }).join("");
+}
+function renderIssueHighlights() {
+  document.querySelectorAll(".issue-highlight").forEach(el => el.remove());
+
+  if (!currentViewport || !pdfDoc) return;
+
+  const rect = canvas.getBoundingClientRect();
+  const pdfWidth = currentViewport.width / renderScale;
+  const pdfHeight = currentViewport.height / renderScale;
+
+  detectedIssues.forEach((issue, index) => {
+    if (!issue.highlight) return;
+    if (resolvedIssueIds.includes(issue.id)) return;
+    if (issue.highlight.page !== currentPage) return;
+
+    const box = document.createElement("div");
+    box.className = "issue-highlight";
+
+    if (issue.id === activeIssueHighlightId) {
+      box.classList.add("active");
+    }
+
+    const x = issue.highlight.xPercent * pdfWidth;
+    const centreY = issue.highlight.yPercent * pdfHeight;
+    const width = issue.highlight.width * pdfWidth;
+    const height = issue.highlight.height * pdfHeight;
+    const y = centreY - height / 2;
+
+    const left = (x / pdfWidth) * rect.width;
+    const top = ((pdfHeight - y - height) / pdfHeight) * rect.height;
+    const boxWidth = (width / pdfWidth) * rect.width;
+    const boxHeight = (height / pdfHeight) * rect.height;
+
+    box.style.left = `${left}px`;
+    box.style.top = `${top}px`;
+    box.style.width = `${boxWidth}px`;
+    box.style.height = `${boxHeight}px`;
+
+    const label = document.createElement("div");
+    label.className = "issue-highlight-label";
+    label.textContent = issue.highlight.label || `Issue ${index + 1}`;
+
+    box.appendChild(label);
+    pageWrap.appendChild(box);
+  });
+}
+    function applySuggestedFix(issueId) {
+      const issue = detectedIssues.find(item => item.id === issueId);
+
+      if (!issue || !issue.correction) {
+        showStatus("No suggested fix available for this issue.", "error");
+        return;
+      }
+
+      const exists = corrections.some(correction => correction.source === issue.correction.source);
+
+      if (exists) {
+        showStatus("This suggested fix has already been added.", "warning");
+        return;
+      }
+
+     addCorrectionFromPercent(issue.correction);
+
+markIssueResolved(issue.id);
+
+currentPage = issue.correction.page;
+renderPage();
+renderIssues(detectedIssues);
+
+showStatus("Suggested patch added and issue marked as corrected.", "success");
+    }
+    function markIssueResolved(issueId) {
+  if (!resolvedIssueIds.includes(issueId)) {
+    resolvedIssueIds.push(issueId);
+  }
+
+  if (activeIssueHighlightId === issueId) {
+    activeIssueHighlightId = null;
+  }
+
+  renderIssueHighlights();
+}
+    function resolveIssuesCoveredByPatch(patch) {
+  if (!patch) return;
+
+  detectedIssues.forEach(issue => {
+    if (!issue.highlight) return;
+    if (resolvedIssueIds.includes(issue.id)) return;
+    if (issue.highlight.page !== patch.page) return;
+
+    const pdfWidth = currentViewport.width / renderScale;
+    const pdfHeight = currentViewport.height / renderScale;
+
+    const issueX = issue.highlight.xPercent * pdfWidth;
+    const issueCentreY = issue.highlight.yPercent * pdfHeight;
+    const issueWidth = issue.highlight.width * pdfWidth;
+    const issueHeight = issue.highlight.height * pdfHeight;
+    const issueY = issueCentreY - issueHeight / 2;
+
+    const overlaps =
+      patch.x < issueX + issueWidth &&
+      patch.x + patch.width > issueX &&
+      patch.y < issueY + issueHeight &&
+      patch.y + patch.height > issueY;
+
+    if (overlaps) {
+      markIssueResolved(issue.id);
+    }
+  });
+}
+function focusIssue(issueId) {
+  const issue = detectedIssues.find(item => item.id === issueId);
+
+  if (!issue || !issue.highlight) {
+    showStatus("No preview highlight is available for this issue.", "warning");
+    return;
+  }
+
+  activeIssueHighlightId = issueId;
+  currentPage = issue.highlight.page;
+
+  renderPage();
+
+  showStatus("Issue highlighted on PDF preview.", "success");
+}
+    function addCorrectionFromPercent(correctionData) {
+      const pdfWidth = currentViewport.width / renderScale;
+      const pdfHeight = currentViewport.height / renderScale;
+
+      const centreX = pdfWidth * correctionData.xPercent;
+      const centreY = pdfHeight * correctionData.yPercent;
+
+      addCorrection({
+        page: correctionData.page,
+        text: correctionData.text,
+        x: centreX - correctionData.width / 2,
+        y: centreY - correctionData.height / 2,
+        width: correctionData.width,
+        height: correctionData.height,
+        fontSize: correctionData.fontSize,
+        source: correctionData.source
       });
+    }
+
+    function addCorrection(correctionData) {
+      const id = Date.now().toString() + "-" + Math.random().toString(16).slice(2);
+
+      corrections.push({
+        id,
+        page: correctionData.page,
+        text: correctionData.text,
+        x: correctionData.x,
+        y: correctionData.y,
+        width: correctionData.width,
+        height: correctionData.height,
+        fontSize: correctionData.fontSize,
+        source: correctionData.source || "Manual patch"
+      });
+
+      selectedCorrectionId = id;
+renderCorrectionPatches();
+updateCorrectionList();
+
+return corrections.find(correction => correction.id === id);
+    }
+
+    function renderCorrectionPatches() {
+      document.querySelectorAll(".patch").forEach(el => el.remove());
+
+      if (!currentViewport) return;
+
+      const rect = canvas.getBoundingClientRect();
+      const pdfWidth = currentViewport.width / renderScale;
+      const pdfHeight = currentViewport.height / renderScale;
+
+      corrections
+        .filter(correction => correction.page === currentPage)
+        .forEach(correction => {
+          const patch = document.createElement("div");
+          patch.className = "patch";
+          if (correction.id === selectedCorrectionId) patch.classList.add("selected");
+
+          patch.dataset.id = correction.id;
+          patch.textContent = correction.text;
+
+          const left = (correction.x / pdfWidth) * rect.width;
+          const top = ((pdfHeight - correction.y - correction.height) / pdfHeight) * rect.height;
+          const width = (correction.width / pdfWidth) * rect.width;
+          const height = (correction.height / pdfHeight) * rect.height;
+          const fontSize = (correction.fontSize / pdfHeight) * rect.height;
+
+          patch.style.left = `${left}px`;
+          patch.style.top = `${top}px`;
+          patch.style.width = `${width}px`;
+          patch.style.height = `${height}px`;
+          patch.style.fontSize = `${fontSize}px`;
+
+          patch.addEventListener("pointerdown", startDragCorrection);
+
+          pageWrap.appendChild(patch);
+        });
+    }
+
+    function startDragCorrection(event) {
+      event.preventDefault();
+      event.stopPropagation();
+
+      const correctionId = event.target.dataset.id;
+      const correction = corrections.find(item => item.id === correctionId);
+
+      if (!correction) return;
+
+      selectedCorrectionId = correctionId;
+      draggingCorrection = correction;
+
+      dragStartClientX = event.clientX;
+      dragStartClientY = event.clientY;
+      dragStartPdfX = correction.x;
+      dragStartPdfY = correction.y;
+
+      event.target.setPointerCapture(event.pointerId);
+
+      document.addEventListener("pointermove", dragCorrection);
+      document.addEventListener("pointerup", stopDragCorrection);
+
+      renderCorrectionPatches();
+      updateCorrectionList();
+    }
+
+    function dragCorrection(event) {
+      if (!draggingCorrection || !currentViewport) return;
+
+      const rect = canvas.getBoundingClientRect();
+      const pdfWidth = currentViewport.width / renderScale;
+      const pdfHeight = currentViewport.height / renderScale;
+
+      const deltaX = event.clientX - dragStartClientX;
+      const deltaY = event.clientY - dragStartClientY;
+
+      const pdfDeltaX = (deltaX / rect.width) * pdfWidth;
+      const pdfDeltaY = (deltaY / rect.height) * pdfHeight;
+
+      draggingCorrection.x = dragStartPdfX + pdfDeltaX;
+      draggingCorrection.y = dragStartPdfY - pdfDeltaY;
+
+      renderCorrectionPatches();
+    }
+
+    function stopDragCorrection() {
+      if (!draggingCorrection) return;
+
+      draggingCorrection = null;
+
+      document.removeEventListener("pointermove", dragCorrection);
+      document.removeEventListener("pointerup", stopDragCorrection);
+
+     const selectedPatch = corrections.find(correction => correction.id === selectedCorrectionId);
+
+resolveIssuesCoveredByPatch(selectedPatch);
+
+renderCorrectionPatches();
+renderIssueHighlights();
+renderIssues(detectedIssues);
+updateCorrectionList();
+
+showStatus("Patch position updated.", "success");
+    }
+
+    function getPdfPositionFromClick(event) {
+      const rect = canvas.getBoundingClientRect();
+      const clickX = event.clientX - rect.left;
+      const clickY = event.clientY - rect.top;
+
+      if (clickX < 0 || clickY < 0 || clickX > rect.width || clickY > rect.height) return null;
+
+      const pdfWidth = currentViewport.width / renderScale;
+      const pdfHeight = currentViewport.height / renderScale;
+
+      const pdfX = (clickX / rect.width) * pdfWidth;
+      const pdfY = pdfHeight - ((clickY / rect.height) * pdfHeight);
+
+      return { pdfX, pdfY };
+    }
+
+    function getSelectedCorrection() {
+      if (!selectedCorrectionId) {
+        showStatus("Select a patch first.", "warning");
+        return null;
+      }
+
+      const correction = corrections.find(item => item.id === selectedCorrectionId);
+
+      if (!correction) {
+        showStatus("Selected patch could not be found.", "error");
+        return null;
+      }
+
+      return correction;
+    }
+
+    function nudgeSelected(dx, dy) {
+      const correction = getSelectedCorrection();
+      if (!correction) return;
+
+      correction.x += dx;
+      correction.y += dy;
+
+      renderCorrectionPatches();
+      updateCorrectionList();
+    }
+
+    function resizeSelected(dw, dh) {
+      const correction = getSelectedCorrection();
+      if (!correction) return;
+
+      correction.width = Math.max(5, correction.width + dw);
+      correction.height = Math.max(5, correction.height + dh);
+
+      renderCorrectionPatches();
+      updateCorrectionList();
+    }
+
+    function changeFontSize(delta) {
+      const correction = getSelectedCorrection();
+      if (!correction) return;
+
+      correction.fontSize = Math.max(4, correction.fontSize + delta);
+
+      renderCorrectionPatches();
+      updateCorrectionList();
+    }
+
+    async function saveCorrectedPDF() {
+      if (!originalPdfBytes) {
+        showStatus("Upload a PDF first.", "error");
+        return;
+      }
+
+      if (corrections.length === 0) {
+        showStatus("No correction patches have been added yet.", "warning");
+        return;
+      }
+
+      const pdfLibDoc = await PDFLib.PDFDocument.load(originalPdfBytes);
+      const pages = pdfLibDoc.getPages();
+      const font = await pdfLibDoc.embedFont(PDFLib.StandardFonts.HelveticaBold);
+
+      corrections.forEach(correction => {
+        const page = pages[correction.page - 1];
+
+        if (!page) return;
+
+        page.drawRectangle({
+          x: correction.x,
+          y: correction.y,
+          width: correction.width,
+          height: correction.height,
+          color: PDFLib.rgb(1, 1, 1)
+        });
+
+        const lines = String(correction.text).split("\n");
+        const lineHeight = correction.fontSize * 1.05;
+        const totalTextHeight = lines.length * lineHeight;
+
+        lines.forEach((line, index) => {
+          const textWidth = font.widthOfTextAtSize(line, correction.fontSize);
+          const textX = correction.x + (correction.width - textWidth) / 2;
+          const textY =
+            correction.y +
+            (correction.height - totalTextHeight) / 2 +
+            totalTextHeight -
+            lineHeight * (index + 1) +
+            2;
+
+          page.drawText(line, {
+            x: textX,
+            y: textY,
+            size: correction.fontSize,
+            font,
+            color: PDFLib.rgb(0, 0, 0)
+          });
+        });
+      });
+
+      const correctedBytes = await pdfLibDoc.save();
+      const blob = new Blob([correctedBytes], { type: "application/pdf" });
+      const url = URL.createObjectURL(blob);
+
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+
+      URL.revokeObjectURL(url);
+
+      showStatus("Corrected PDF saved to device.", "success");
+    }
+
+    function updateCorrectionList() {
+      const list = document.getElementById("correctionList");
+
+      if (corrections.length === 0) {
+        list.innerHTML = `<div class="small-text">No patches added yet.</div>`;
+        return;
+      }
+
+      list.innerHTML = corrections
+        .map((correction, index) => `
+          <div class="correction-item ${correction.id === selectedCorrectionId ? "selected" : ""}" onclick="selectCorrection('${correction.id}')">
+            <strong>${index + 1}. Page ${correction.page}</strong><br>
+            ${escapeHtml(correction.text)}<br>
+            <span class="small-text">
+              ${escapeHtml(correction.source)}<br>
+              W: ${Math.round(correction.width)} |
+              H: ${Math.round(correction.height)} |
+              Font: ${correction.fontSize}
+            </span>
+          </div>
+        `)
+        .join("");
+    }
+
+    function selectCorrection(id) {
+      selectedCorrectionId = id;
+      const correction = corrections.find(item => item.id === id);
+
+      if (correction && correction.page !== currentPage) {
+        currentPage = correction.page;
+        renderPage();
+      } else {
+        renderCorrectionPatches();
+      }
+
+      updateCorrectionList();
+    }
+
+    function deleteSelectedCorrection() {
+      if (!selectedCorrectionId) {
+        showStatus("Select a patch first.", "warning");
+        return;
+      }
+
+      corrections = corrections.filter(correction => correction.id !== selectedCorrectionId);
+      selectedCorrectionId = null;
+
+      renderCorrectionPatches();
+      updateCorrectionList();
+
+      showStatus("Selected patch deleted.", "success");
+    }
+
+    function prevPage() {
+      if (!pdfDoc || currentPage <= 1) return;
+      currentPage--;
+      selectedCorrectionId = null;
+      renderPage();
+    }
+
+    function nextPage() {
+      if (!pdfDoc || currentPage >= totalPages) return;
+      currentPage++;
+      selectedCorrectionId = null;
+      renderPage();
+    }
+
+    function updatePageInfo() {
+      const pageInfo = document.getElementById("pageInfo");
+
+      if (!pdfDoc) {
+        pageInfo.textContent = "No PDF loaded";
+        return;
+      }
+
+      pageInfo.textContent = `Page ${currentPage} of ${totalPages}`;
+    }
+
+    function clearAll() {
+      if (!confirm("Clear the current PDF and all correction patches?")) return;
+
+      originalPdfBytes = null;
+      pdfDoc = null;
+      currentPage = 1;
+      totalPages = 0;
+      extractedText = "";
+      corrections = [];
+      detectedIssues = [];
+      selectedCorrectionId = null;
+
+      pdfUpload.value = "";
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      canvas.width = 0;
+      canvas.height = 0;
+
+      document.querySelectorAll(".patch").forEach(el => el.remove());
+
+      document.getElementById("issues").innerHTML =
+        `<div class="issue warn">Upload a PDF and press “Check PDF”.</div>`;
+
+      document.getElementById("textPreview").textContent = "No text extracted yet.";
+
+      updatePageInfo();
+      updateCorrectionList();
+
+      showStatus("Cleared.", "success");
+    }
+
+    function normaliseText(text) {
+      return String(text || "")
+        .toLowerCase()
+        .replace(/\s+/g, " ")
+        .trim();
+    }
+
+    function showStatus(message, type) {
+      const status = document.getElementById("status");
+      status.textContent = message;
+      status.className = `status ${type}`;
+
+      setTimeout(() => {
+        status.className = "status";
+        status.textContent = "";
+      }, 4500);
+    }
+
+    function escapeHtml(text) {
+      return String(text)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
     }
   </script>
 </body>
