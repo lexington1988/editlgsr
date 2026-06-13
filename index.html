@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 
-  <title>TM LGSR Checker & Corrector</title>
+  <title>TM LGSR Checker & Corrector</title>function checkApplianceInspectionFields
 
   <link rel="manifest" href="manifest.json">
 <link rel="icon" href="favicon.ico">
@@ -237,23 +237,25 @@ textarea {
     }
 
     .patch {
-      position: absolute;
-      background: rgba(255, 255, 255, 0.96);
-      border: 1px dashed rgba(106, 27, 154, 0.85);
-      color: #000;
-      cursor: grab;
-      touch-action: none;
-      z-index: 3;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      overflow: hidden;
-      white-space: pre-wrap;
-      line-height: 1.05;
-      font-weight: bold;
-      user-select: none;
-    }
+  position: absolute;
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px dashed rgba(106, 27, 154, 0.85);
+  color: #000;
+  cursor: grab;
+  touch-action: none;
+  z-index: 3;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  text-align: center;
+  overflow: hidden;
+  white-space: pre-wrap;
+  line-height: 1.05;
+  font-weight: normal;
+  user-select: none;
+  padding-top: 1px;
+  box-sizing: border-box;
+}
 
     .patch.selected {
       outline: 2px solid var(--primary);
@@ -426,12 +428,122 @@ textarea {
       padding: 8px 10px;
       font-size: 0.86rem;
     }
+.admin-mapping-panel {
+  display: none;
+  border: 2px solid var(--primary);
+  background: #faf5ff;
+  border-radius: 16px;
+  padding: 12px;
+  margin-bottom: 16px;
+}
 
+.admin-mapping-panel.active {
+  display: block;
+}
+
+.admin-mapping-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 10px;
+  color: var(--primary-dark);
+}
+
+.mapping-controls {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.mapping-controls button {
+  touch-action: manipulation;
+}
+
+.mapping-readout {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px;
+  margin-bottom: 10px;
+  font-size: 0.9rem;
+  font-family: monospace;
+  white-space: pre-wrap;
+}
+
+.field-map-output {
+  width: 100%;
+  min-height: 140px;
+  font-family: monospace;
+  font-size: 0.8rem;
+}
+
+.map-box {
+  position: absolute;
+  border: 2px solid #1565c0;
+  background: rgba(21, 101, 192, 0.12);
+  color: #1565c0;
+  z-index: 4;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  font-size: 10px;
+  font-weight: bold;
+  overflow: visible;
+}
+
+.map-box.selected {
+  border-color: #6a1b9a;
+  background: rgba(106, 27, 154, 0.18);
+  outline: 2px solid rgba(106, 27, 154, 0.35);
+  cursor: grabbing;
+}
+
+.map-box-label {
+  position: absolute;
+  top: -20px;
+  left: -2px;
+  background: #1565c0;
+  color: #fff;
+  padding: 3px 6px;
+  border-radius: 8px;
+  font-size: 10px;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.map-box.selected .map-box-label {
+  background: #6a1b9a;
+}
+
+.mapping-grid-line {
+  position: absolute;
+  pointer-events: none;
+  z-index: 1;
+  background: rgba(106, 27, 154, 0.16);
+}
+
+.mapping-grid-line.vertical {
+  width: 1px;
+  top: 0;
+  bottom: 0;
+}
+
+.mapping-grid-line.horizontal {
+  height: 1px;
+  left: 0;
+  right: 0;
+}
     @media (max-width: 950px) {
       .main-grid {
         grid-template-columns: 1fr;
       }
-
+.mapping-controls {
+  flex-direction: column;
+  align-items: stretch;
+}
       .edit-panel,
       .page-controls,
       .adjust-panel,
@@ -467,19 +579,72 @@ button {
 
 <body>
   <div class="container">
-    <h1>TM LGSR Checker & Corrector</h1>
+    <h1 id="appTitle" title="TM LGSR Checker & Corrector">TM LGSR Checker & Corrector</h1>
     <p class="subtitle">
       Upload the TM LGSR PDF, check for likely mistakes, add clean correction patches, then save a corrected copy.
     </p>
 
     <div class="top-actions">
-      <input id="pdfUpload" type="file" accept="application/pdf" />
-      <button class="primary-btn" onclick="runChecks()">Check PDF</button>
-      <button class="primary-btn" onclick="saveCorrectedPDF()">Save Corrected PDF</button>
-      <button class="secondary-btn" onclick="clearAll()">Clear</button>
-    </div>
+  <input id="pdfUpload" type="file" accept=".pdf,application/pdf" />
+  <button class="primary-btn" onclick="runChecks()">Check PDF</button>
+  <button class="primary-btn" onclick="saveCorrectedPDF()">Save Corrected PDF</button>
+  <button class="secondary-btn" onclick="clearAll()">Clear</button>
+</div>
 
-    <div id="status" class="status"></div>
+<div id="status" class="status"></div>
+
+<div id="adminMappingPanel" class="admin-mapping-panel">
+  <div class="admin-mapping-header">
+    <strong>Admin Mapping Mode</strong>
+    <button class="danger-btn" onclick="lockAdminMode()">Lock Admin</button>
+  </div>
+
+  <p class="small-text">
+    Use this hidden panel to map certificate boxes accurately. These tools are only visible after admin unlock.
+  </p>
+
+  <div class="mapping-controls">
+    <button id="mappingModeBtn" class="blue-btn" onclick="toggleMappingMode()">Mapping Mode: OFF</button>
+    <button id="gridBtn" class="secondary-btn" onclick="toggleMappingGrid()">Grid: OFF</button>
+
+    <label for="mapFieldSelect">Field</label>
+    <select id="mapFieldSelect"></select>
+
+    <label for="mapBoxWidth">W</label>
+    <input id="mapBoxWidth" type="number" value="40" min="5" max="400" />
+
+    <label for="mapBoxHeight">H</label>
+    <input id="mapBoxHeight" type="number" value="14" min="5" max="200" />
+
+    <button class="green-btn" onclick="addMappingBoxAtCentre()">Add Mapping Box Centre</button>
+    <button class="danger-btn" onclick="deleteSelectedMappingBox()">Delete Selected Map Box</button>
+  </div>
+
+  <div class="mapping-controls">
+    <strong>Selected map box:</strong>
+    <button onclick="nudgeSelectedMappingBox(0, 1)">↑</button>
+    <button onclick="nudgeSelectedMappingBox(0, -1)">↓</button>
+    <button onclick="nudgeSelectedMappingBox(-1, 0)">←</button>
+    <button onclick="nudgeSelectedMappingBox(1, 0)">→</button>
+
+    <button onclick="resizeSelectedMappingBox(-2, 0)">W-</button>
+    <button onclick="resizeSelectedMappingBox(2, 0)">W+</button>
+    <button onclick="resizeSelectedMappingBox(0, -1)">H-</button>
+    <button onclick="resizeSelectedMappingBox(0, 1)">H+</button>
+  </div>
+
+  <div id="mappingCoordReadout" class="mapping-readout">
+    No mapping box selected.
+  </div>
+
+  <div class="mapping-controls">
+    <button class="blue-btn" onclick="exportFieldMap()">Export Field Map</button>
+    <button class="secondary-btn" onclick="copyFieldMapToClipboard()">Copy Field Map</button>
+    <button class="danger-btn" onclick="clearFieldMap()">Clear Field Map</button>
+  </div>
+
+  <textarea id="fieldMapOutput" class="field-map-output" readonly placeholder="Exported field map will appear here..."></textarea>
+</div>
 
     <div class="edit-panel">
       <label for="correctionText">Correction Text</label>
@@ -556,8 +721,10 @@ button {
 
         <div id="correctionList" class="correction-list"></div>
 
-        <h2>Extracted Text</h2>
-        <div id="textPreview" class="text-preview">No text extracted yet.</div>
+        <div id="extractedTextSection" style="display: none;">
+  <h2>Extracted Text</h2>
+  <div id="textPreview" class="text-preview">No text extracted yet.</div>
+</div>
       </div>
     </div>
   </div>
@@ -573,6 +740,8 @@ button {
     let currentViewport = null;
     let renderScale = 1.4;
     let extractedText = "";
+let extractedFieldValues = {};
+let extractedTextTokensByPage = {};
     let corrections = [];
     let detectedIssues = [];
     let selectedCorrectionId = null;
@@ -586,18 +755,326 @@ let dragStartPdfY = 0;
 let touchDragLiftPixels = 0;
 let activeIssueHighlightId = null;
 let resolvedIssueIds = [];
+
+let adminTapCount = 0;
+let adminTapTimer = null;
+let isAdminUnlocked = false;
+let mappingMode = false;
+let mappingGridVisible = false;
+let fieldMapBoxes = [];
+let selectedMapBoxId = null;
+let draggingMapBox = null;
+let mapDragStartClientX = 0;
+let mapDragStartClientY = 0;
+let mapDragStartPdfX = 0;
+let mapDragStartPdfY = 0;
+let mapTouchLiftPixels = 0;
     
     const pdfUpload = document.getElementById("pdfUpload");
     const canvas = document.getElementById("pdfCanvas");
     const ctx = canvas.getContext("2d");
     const pageWrap = document.getElementById("pageWrap");
+const LGSR_MAPPING_FIELDS = [
+  { id: "tenantName", label: "Tenant Name" },
+  { id: "tenantAddress", label: "Tenant Address" },
+  { id: "jobNo", label: "Job No" },
+  { id: "visitNo", label: "Visit No" },
 
-    pdfUpload.addEventListener("change", loadPDF);
+  { id: "gasTightnessTestSatisfactory", label: "Gas Tightness Test Satisfactory" },
+  { id: "pipeworkVisualInspectionSatisfactory", label: "Gas Installation Pipework Visual Inspection Satisfactory" },
+  { id: "equipotentialBonding", label: "Equipotential Bonding" },
+  { id: "coAlarmFittedAndWorking", label: "CO Alarm Fitted and Working" },
+  { id: "gasMeterPresent", label: "Gas Meter Present" },
+  { id: "cappedAtRequestOf", label: "Capped At Request Of" },
 
-    pageWrap.addEventListener("click", function(event) {
-      if (!pdfDoc) return;
+  { id: "emergencyControlValveAvailable", label: "Emergency Control Valve Available" },
+  { id: "numberOfAppliancesTested", label: "Number Of Appliance Tested" },
+  { id: "installationPass", label: "Installation Pass" },
+  { id: "smokeAlarmFittedAndWorking", label: "Smoke Alarm Fitted and Working" },
+  { id: "gasMeterLocation", label: "Gas Meter Location" },
 
-      if (event.target.classList.contains("patch")) {
+  { id: "customerSignature", label: "Customer Signature" },
+  { id: "operativeSignature", label: "Operative Signature" },
+  { id: "inspectionDate", label: "Inspection Date" },
+  { id: "engineerName", label: "Engineer Name" },
+  { id: "engineerRegistration", label: "Engineer Registration" },
+  { id: "companyRegistration", label: "Company Registration" },
+  { id: "appliance1Location", label: "Appliance 1 Location" },
+  { id: "appliance1Type", label: "Appliance 1 Type" },
+  { id: "appliance1Make", label: "Appliance 1 Make" },
+  { id: "appliance1Model", label: "Appliance 1 Model" },
+  { id: "appliance1SafeToUse", label: "Appliance 1 Safe To Use" },
+  { id: "appliance1LandlordsAppliance", label: "Appliance 1 Landlord Appliance" },
+  { id: "appliance1VisualInspectionOnly", label: "Appliance 1 Visual Inspection Only" },
+
+  { id: "appliance2Location", label: "Appliance 2 Location" },
+  { id: "appliance2Type", label: "Appliance 2 Type" },
+  { id: "appliance2Make", label: "Appliance 2 Make" },
+  { id: "appliance2Model", label: "Appliance 2 Model" },
+  { id: "appliance2SafeToUse", label: "Appliance 2 Safe To Use" },
+  { id: "appliance2LandlordsAppliance", label: "Appliance 2 Landlord Appliance" },
+  { id: "appliance2VisualInspectionOnly", label: "Appliance 2 Visual Inspection Only" },
+
+  { id: "appliance3Location", label: "Appliance 3 Location" },
+  { id: "appliance3Type", label: "Appliance 3 Type" },
+  { id: "appliance3Make", label: "Appliance 3 Make" },
+  { id: "appliance3Model", label: "Appliance 3 Model" },
+  { id: "appliance3Co2Low", label: "Appliance 3 CO2 Low" },
+  { id: "appliance3Co2High", label: "Appliance 3 CO2 High" },
+  { id: "appliance3CoLow", label: "Appliance 3 CO Low" },
+  { id: "appliance3CoHigh", label: "Appliance 3 CO High" },
+  { id: "appliance3FlueType", label: "Appliance 3 Flue Type" },
+  { id: "appliance3OperatingPressure", label: "Appliance 3 Operating Pressure / Heat Input" },
+  { id: "appliance3AnalyserLowRatio", label: "Appliance 3 Analyser Low Ratio" },
+  { id: "appliance3AnalyserHighRatio", label: "Appliance 3 Analyser High Ratio" },
+  { id: "appliance3SafetyDeviceCorrect", label: "Appliance 3 Safety Device Correct" },
+  { id: "appliance3VentilationSatisfactory", label: "Appliance 3 Ventilation Satisfactory" },
+  { id: "appliance3VisualConditionOfFlue", label: "Appliance 3 Visual Condition Of Flue" },
+  { id: "appliance3FlueFlowCheck", label: "Appliance 3 Flue Flow Check" },
+  { id: "appliance3SpillageTest", label: "Appliance 3 Spillage Test" },
+  { id: "appliance3ApplianceServiced", label: "Appliance 3 Appliance Serviced" },
+  { id: "appliance3SafeToUse", label: "Appliance 3 Safe To Use" },
+  { id: "appliance3LandlordsAppliance", label: "Appliance 3 Landlord Appliance" },
+  { id: "appliance3SafetyCategory", label: "Appliance 3 Safety Category" },
+  { id: "appliance3VisualInspectionOnly", label: "Appliance 3 Visual Inspection Only" }
+];
+const LGSR_FIELD_MAP = {
+  "gasTightnessTestSatisfactory": {
+    "label": "Gas Tightness Test Satisfactory",
+    "expected": "YES",
+    "correctionText": "YES",
+    "page": 1,
+    "x": 582.47,
+    "y": 493.79,
+    "width": 40,
+    "height": 12
+},
+   "pipeworkVisualInspectionSatisfactory": {
+    "label": "Gas Installation Pipework Visual Inspection Satisfactory",
+    "expected": "YES",
+    "correctionText": "YES",
+    "page": 1,
+    "x": 583.27,
+    "y": 474.53,
+    "width": 40,
+    "height": 14
+  },
+  "equipotentialBonding": {
+    "label": "Equipotential Bonding",
+    "expected": "YES",
+    "correctionText": "YES",
+    "page": 1,
+    "x": 587.01,
+    "y": 454.87,
+    "width": 34,
+    "height": 11
+  },
+  "coAlarmFittedAndWorking": {
+    "label": "CO Alarm Fitted and Working",
+    "expected": "YES",
+    "correctionText": "YES",
+    "page": 1,
+    "x": 586.74,
+    "y": 438.56,
+    "width": 34,
+    "height": 11
+  },
+  "gasMeterPresent": {
+    "label": "Gas Meter Present",
+    "expected": "YES",
+    "correctionText": "YES",
+    "page": 1,
+    "x": 587.22,
+    "y": 423.87,
+    "width": 34,
+    "height": 11
+  },
+  "cappedAtRequestOf": {
+    "label": "Capped At Request Of",
+    "page": 1,
+    "x": 581.42,
+    "y": 408.32,
+    "width": 56,
+    "height": 10
+  },
+  "emergencyControlValveAvailable": {
+    "label": "Emergency Control Valve Available",
+    "expected": "YES",
+    "correctionText": "YES",
+    "page": 1,
+    "x": 775.46,
+    "y": 494.79,
+    "width": 56,
+    "height": 10
+  },
+  "numberOfAppliancesTested": {
+    "label": "Number Of Appliance Tested",
+    "page": 1,
+    "x": 775.46,
+    "y": 477.87,
+    "width": 56,
+    "height": 10
+  },
+  "installationPass": {
+    "label": "Installation Pass",
+    "expected": "YES",
+    "correctionText": "YES",
+    "page": 1,
+    "x": 773.31,
+    "y": 455.8,
+    "width": 56,
+    "height": 10
+  },
+  "smokeAlarmFittedAndWorking": {
+    "label": "Smoke Alarm Fitted and Working",
+    "expected": "YES",
+    "correctionText": "YES",
+    "page": 1,
+    "x": 774.74,
+    "y": 440.55,
+    "width": 56,
+    "height": 10
+  },
+  "gasMeterLocation": {
+    "label": "Gas Meter Location",
+    "page": 1,
+    "x": 66.83,
+    "y": 236.06,
+    "width": 166,
+    "height": 12
+},
+  "customerSignature": {
+    "label": "Customer Signature",
+    "page": 1,
+    "x": 352.27,
+    "y": 74.43,
+    "width": 134,
+    "height": 58
+  },
+  "operativeSignature": {
+    "label": "Operative Signature",
+    "page": 1,
+    "x": 665.16,
+    "y": 75.84,
+    "width": 170,
+    "height": 56
+  },
+  "inspectionDate": {
+    "label": "Inspection Date",
+    "page": 1,
+    "x": 490.22,
+    "y": 74.56,
+    "width": 170,
+    "height": 16
+  },
+  "engineerName": {
+    "label": "Engineer Name",
+    "page": 1,
+    "x": 576.8,
+    "y": 123.12,
+    "width": 86,
+    "height": 16
+  }
+};
+const APPLIANCE_DYNAMIC_COLUMN_BOXES = {
+  page: 1,
+  
+flueType: {
+  x: 332,
+  width: 25,
+  height: 15
+},
+  analyserLowRatio: {
+    x: 401,
+    width: 30,
+    height: 15
+  },
+
+  analyserHighRatio: {
+    x: 438,
+    width: 30,
+    height: 15
+  },
+
+  safetyDeviceCorrect: {
+    x: 474,
+    width: 30,
+    height: 15
+  },
+
+ ventilationSatisfactory: {
+  x: 511,
+  width: 30,
+  height: 15
+},
+
+visualConditionOfFlue: {
+  x: 547,
+  width: 30,
+  height: 15
+},
+
+flueFlowCheck: {
+    x: 575,
+    width: 34,
+    height: 15
+  },
+
+spillageTest: {
+  x: 620,
+  width: 30,
+  height: 15
+},
+
+applianceServiced: {
+  x: 657,
+  width: 30,
+  height: 15
+},
+
+applianceSafeToUse: {
+  x: 693,
+  width: 30,
+  height: 15
+},
+
+landlordsAppliance: {
+  x: 730,
+  width: 30,
+  height: 15
+},
+
+safetyCategory: {
+  x: 752,
+  width: 34,
+  height: 15
+},
+
+visualInspectionOnly: {
+  x: 805.96,
+  width: 24,
+  height: 14
+}
+};
+populateMappingFieldDropdown();
+setupAdminUnlock();
+
+pdfUpload.addEventListener("change", loadPDF);
+
+
+   pageWrap.addEventListener("click", function(event) {
+  if (!pdfDoc) return;
+
+  if (event.target.classList.contains("map-box") || event.target.classList.contains("map-box-label")) {
+    return;
+  }
+
+  if (mappingMode) {
+    addMappingBoxFromClick(event);
+    return;
+  }
+
+  if (event.target.classList.contains("patch")) {
         selectedCorrectionId = event.target.dataset.id;
         renderCorrectionPatches();
         updateCorrectionList();
@@ -733,197 +1210,1373 @@ selectedCorrectionId = null;
 
       renderIssueHighlights();
 renderCorrectionPatches();
+renderMappingOverlay();
 updatePageInfo();
     }
 
-    async function extractTextFromPDF() {
-      extractedText = "";
+   async function extractTextFromPDF() {
+  extractedText = "";
+  extractedFieldValues = {};
+  extractedTextTokensByPage = {};
 
-      for (let i = 1; i <= pdfDoc.numPages; i++) {
-        const page = await pdfDoc.getPage(i);
-        const textContent = await page.getTextContent();
-        const pageText = textContent.items.map(item => item.str).join(" ");
+  for (let i = 1; i <= pdfDoc.numPages; i++) {
+    const page = await pdfDoc.getPage(i);
+    const textContent = await page.getTextContent();
 
-        extractedText += `\n\n--- Page ${i} ---\n${pageText}`;
-      }
+    const pageText = textContent.items.map(item => item.str).join(" ");
+    extractedText += `\n\n--- Page ${i} ---\n${pageText}`;
 
-      extractedText = extractedText.trim();
-    }
+    extractedTextTokensByPage[i] = buildPositionedTextTokens(textContent);
 
-  async function runChecks() {
-  if (!pdfDoc) {
-    showStatus("Upload a PDF first.", "error");
-    return;
+    extractMappedFieldValuesFromTextItems(i, textContent);
   }
 
-  detectedIssues = [];
-  resolvedIssueIds = [];
-  activeIssueHighlightId = null;
+  extractedText = extractedText.trim();
 
-  const text = normaliseText(extractedText);
-
-  checkAdditionalDetailsYesIssues(text);
-checkCarbonMonoxideDetectorListed(text);
-await checkSignatureBoxes();
-checkCOCO2RatioCalculations();
-checkRSFlueFlowIssue(text);
-checkBasicExtractionQuality();
-
-  renderIssues(detectedIssues);
-  renderIssueHighlights();
-
-  if (detectedIssues.length === 0) {
-    showStatus("No obvious TM LGSR issues detected.", "success");
-  } else {
-    showStatus(`${detectedIssues.length} possible issue(s) found.`, "warning");
-  }
+  console.log("Mapped field values:", extractedFieldValues);
+  console.log("Positioned text tokens:", extractedTextTokensByPage);
 }
 
-    function checkAdditionalDetailsYesIssues(text) {
-  const additionalDetailsRules = [
-    {
-      id: "gas-tightness-test",
-      label: "Gas Tightness Test Satisfactory",
-      patterns: [
-        /gas tightness test satisfactory\s+(no|n\/a|na)/i
-      ],
-      xPercent: 0.715,
-      yPercent: 0.843
-    },
-    {
-      id: "pipework-visual-inspection",
-      label: "Gas installation pipework visual inspection satisfactory",
-      patterns: [
-        /gas installation pipework visual inspection satisfactory\s+(no|n\/a|na)/i
-      ],
-      xPercent: 0.715,
-      yPercent: 0.815
-    },
-    {
-      id: "equipotential-bonding",
-      label: "Equipotential bonding",
-      patterns: [
-        /equipotential bonding\s+(no|n\/a|na)/i
-      ],
-      xPercent: 0.715,
-      yPercent: 0.776
-    },
-    {
-      id: "co-alarm",
-      label: "CO alarm fitted and working",
-      patterns: [
-        /co alarm fitted and working\s+(no|n\/a|na)/i
-      ],
-      xPercent: 0.715,
-      yPercent: 0.750
-    },
-    {
-      id: "gas-meter-present",
-      label: "Gas meter present",
-      patterns: [
-        /gas meter present\s+(no|n\/a|na)/i
-      ],
-      xPercent: 0.715,
-      yPercent: 0.724
-    },
-    {
-      id: "emergency-control-valve",
-      label: "Emergency Control Valve Available",
-      patterns: [
-        /emergency control valve available\s+(no|n\/a|na)/i
-      ],
-      xPercent: 0.952,
-      yPercent: 0.843
-    },
-    {
-      id: "installation-pass",
-      label: "Installation pass",
-      patterns: [
-        /installation pass\s+(no|n\/a|na)/i,
-        /installationpass\s+(no|n\/a|na)/i
-      ],
-      xPercent: 0.952,
-      yPercent: 0.776
-    },
-    {
-      id: "smoke-alarm",
-      label: "Smoke alarm fitted and working",
-      patterns: [
-        /smoke alarm fitted and working\s+(no|n\/a|na)/i
-      ],
-      xPercent: 0.952,
-      yPercent: 0.750
+async function runChecks() {
+  try {
+    if (!pdfDoc) {
+      showStatus("Upload a PDF first.", "error");
+      return;
     }
+
+    detectedIssues = [];
+    resolvedIssueIds = [];
+    activeIssueHighlightId = null;
+
+    const text = normaliseText(extractedText);
+const hasInactiveRs = hasInactiveRsGasAppliance();
+
+if (!hasInactiveRs) {
+  checkAdditionalDetailsYesIssues(text);
+  checkNumberOfAppliancesTested();
+}
+
+checkApplianceInspectionFields();
+checkCappedAtRequestOf();
+checkCarbonMonoxideDetectorListed(text);
+    await checkSignatureBoxes();
+    checkCOCO2RatioCalculationsFromParsedRows();
+    checkRSFlueFlowIssue(text);
+    checkBasicExtractionQuality();
+
+    renderIssues(detectedIssues);
+    renderIssueHighlights();
+
+    if (detectedIssues.length === 0) {
+      showStatus("No obvious TM LGSR issues detected.", "success");
+    } else {
+      showStatus(`${detectedIssues.length} possible issue(s) found.`, "warning");
+    }
+  } catch (error) {
+    const errorMessage =
+      error && error.message
+        ? error.message
+        : String(error);
+
+    const errorStack =
+      error && error.stack
+        ? error.stack
+        : "No stack trace available";
+
+    console.error("Check PDF error message:", errorMessage);
+    console.error("Check PDF error stack:", errorStack);
+    console.error("Full error object:", error);
+
+    showStatus(`Check PDF error: ${errorMessage}`, "error");
+  }
+}
+    function buildPositionedTextTokens(textContent) {
+  const tokens = [];
+
+  textContent.items.forEach(item => {
+    const text = String(item.str || "").trim();
+
+    if (!text) return;
+
+    const parts = text.split(/\s+/).filter(Boolean);
+
+    if (parts.length === 0) return;
+
+    const itemX = item.transform[4];
+    const itemY = item.transform[5];
+    const itemWidth = item.width || Math.max(text.length * 4, 4);
+    const itemHeight = item.height || 8;
+
+    let runningX = itemX;
+
+    parts.forEach(part => {
+      const partRatio = part.length / text.replace(/\s+/g, "").length;
+      const estimatedWidth = Math.max(itemWidth * partRatio, 3);
+
+      tokens.push({
+        text: part,
+        x: runningX,
+        y: itemY,
+        width: estimatedWidth,
+        height: itemHeight,
+        sourceText: text
+      });
+
+      runningX += estimatedWidth + 2;
+    });
+  });
+
+  return tokens;
+}
+
+function makePatchBoxFromToken(token) {
+  if (!token) return null;
+
+  return {
+    page: 1,
+    x: roundCoord(token.x - 3),
+    y: roundCoord(token.y - 3),
+    width: roundCoord(Math.max(30, token.width + 8)),
+    height: roundCoord(Math.max(10, token.height + 6))
+  };
+}
+
+function makeApplianceDynamicBoxFromToken(token, columnKey) {
+  if (!token) return null;
+
+  const column = APPLIANCE_DYNAMIC_COLUMN_BOXES[columnKey];
+
+  if (!column) {
+    return makePatchBoxFromToken(token);
+  }
+
+const yOffsetByColumn = {
+  flueType: -8,
+  analyserLowRatio: -8,
+  analyserHighRatio: -8,
+  safetyDeviceCorrect: -8,
+  ventilationSatisfactory: -8,
+  visualConditionOfFlue: -8,
+  flueFlowCheck: -8,
+  spillageTest: -8,
+  applianceServiced: -8,
+  applianceSafeToUse: -8,
+  landlordsAppliance: -8,
+  safetyCategory: -8,
+visualInspectionOnly: -8
+ 
+  
+};
+
+  const yOffset = yOffsetByColumn[columnKey] ?? -3;
+
+  return {
+    page: APPLIANCE_DYNAMIC_COLUMN_BOXES.page,
+    x: roundCoord(column.x),
+    y: roundCoord(token.y + yOffset),
+    width: roundCoord(column.width),
+    height: roundCoord(column.height)
+  };
+}
+    function makeApplianceDynamicBoxFromRowAnchor(rowAnchorToken, columnKey) {
+  if (!rowAnchorToken) return null;
+
+  const column = APPLIANCE_DYNAMIC_COLUMN_BOXES[columnKey];
+
+  if (!column) {
+    return makePatchBoxFromToken(rowAnchorToken);
+  }
+
+  const yOffsetByColumn = {
+    flueType: -8,
+  analyserLowRatio: -8,
+  analyserHighRatio: -8,
+  safetyDeviceCorrect: -8,
+  ventilationSatisfactory: -8,
+  visualConditionOfFlue: -8,
+  flueFlowCheck: -8,
+  spillageTest: -8,
+  applianceServiced: -8,
+  applianceSafeToUse: -8,
+  landlordsAppliance: -8,
+  safetyCategory: -8,
+visualInspectionOnly: -8
+};
+
+  const yOffset = yOffsetByColumn[columnKey] ?? -8;
+
+  return {
+    page: APPLIANCE_DYNAMIC_COLUMN_BOXES.page,
+    x: roundCoord(column.x),
+    y: roundCoord(rowAnchorToken.y + yOffset),
+    width: roundCoord(column.width),
+    height: roundCoord(column.height)
+  };
+}
+function getTokenFromDynamicCell(rowAnchorToken, columnKey) {
+  if (!rowAnchorToken) return null;
+
+  const column = APPLIANCE_DYNAMIC_COLUMN_BOXES[columnKey];
+
+  if (!column) return null;
+
+  const pageTokens = extractedTextTokensByPage[1] || [];
+
+ const yOffsetByColumn = {
+   flueType: -8,
+  analyserLowRatio: -8,
+  analyserHighRatio: -8,
+  safetyDeviceCorrect: -8,
+  ventilationSatisfactory: -8,
+  visualConditionOfFlue: -8,
+  flueFlowCheck: -8,
+  spillageTest: -8,
+  applianceServiced: -8,
+  applianceSafeToUse: -8,
+  landlordsAppliance: -8,
+  safetyCategory: -8,
+   visualInspectionOnly: -8
+};
+
+  const yOffset = yOffsetByColumn[columnKey] ?? -8;
+
+  const left = column.x - 2;
+  const right = column.x + column.width + 2;
+  const bottom = rowAnchorToken.y + yOffset - 2;
+  const top = rowAnchorToken.y + yOffset + column.height + 2;
+
+  const candidates = pageTokens
+    .map(token => {
+      const tokenCentreX = token.x + token.width / 2;
+      const tokenCentreY = token.y + token.height / 2;
+
+      const isInsideCell =
+        tokenCentreX >= left &&
+        tokenCentreX <= right &&
+        tokenCentreY >= bottom &&
+        tokenCentreY <= top;
+
+      const cellCentreX = column.x + column.width / 2;
+      const cellCentreY = rowAnchorToken.y + yOffset + column.height / 2;
+
+      const distanceFromCentre = Math.hypot(
+        tokenCentreX - cellCentreX,
+        tokenCentreY - cellCentreY
+      );
+
+      return {
+        ...token,
+        isInsideCell,
+        distanceFromCentre
+      };
+    })
+    .filter(token => token.text && token.isInsideCell)
+    .sort((a, b) => a.distanceFromCentre - b.distanceFromCentre);
+
+  return candidates[0] || null;
+}
+
+function getTokenTextFromDynamicCell(rowAnchorToken, fallbackToken, columnKey) {
+  const cellToken = getTokenFromDynamicCell(rowAnchorToken, columnKey);
+
+  if (cellToken) {
+    return getTokenText(cellToken);
+  }
+
+  /*
+    Do not fall back to the old index-based token for mapped inspection fields.
+    The fallback can accidentally read the neighbouring column, which is what
+    happened with Appliance safe to use reading a nearby NO.
+  */
+ const mappedOnlyColumns = [
+  "safetyDeviceCorrect",
+  "ventilationSatisfactory",
+  "visualConditionOfFlue",
+  "flueFlowCheck",
+  "spillageTest",
+  "applianceServiced",
+  "applianceSafeToUse",
+  "landlordsAppliance",
+  "safetyCategory",
+  "visualInspectionOnly"
+];
+
+  if (mappedOnlyColumns.includes(columnKey)) {
+    return "";
+  }
+
+  return getTokenText(fallbackToken);
+}
+    function getTextFromBox(box) {
+  if (!box) return "";
+
+  const pageTokens = extractedTextTokensByPage[box.page] || [];
+
+  const left = box.x;
+  const right = box.x + box.width;
+  const bottom = box.y;
+  const top = box.y + box.height;
+
+  const tokensInBox = pageTokens
+    .filter(token => {
+      const tokenCentreX = token.x + token.width / 2;
+      const tokenCentreY = token.y + token.height / 2;
+
+      return (
+        tokenCentreX >= left &&
+        tokenCentreX <= right &&
+        tokenCentreY >= bottom &&
+        tokenCentreY <= top
+      );
+    })
+    .sort((a, b) => a.x - b.x);
+
+  return tokensInBox
+    .map(token => token.text)
+    .join(" ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+function getTokenText(token) {
+  return token ? String(token.text || "").trim() : "";
+}
+ function extractMappedFieldValuesFromTextItems(pageNumber, textContent) {
+  if (typeof LGSR_FIELD_MAP === "undefined") return;
+
+  Object.keys(LGSR_FIELD_MAP).forEach(fieldId => {
+    const field = LGSR_FIELD_MAP[fieldId];
+
+    if (field.page !== pageNumber) return;
+
+    const padding = 2;
+
+    const left = field.x - padding;
+    const right = field.x + field.width + padding;
+    const bottom = field.y - padding;
+    const top = field.y + field.height + padding;
+
+    const boxCentreX = field.x + field.width / 2;
+    const boxCentreY = field.y + field.height / 2;
+
+    const candidates = textContent.items
+      .map(item => {
+        const itemX = item.transform[4];
+        const itemY = item.transform[5];
+        const itemWidth = item.width || 0;
+        const itemHeight = item.height || 8;
+
+        const itemCentreX = itemX + itemWidth / 2;
+        const itemCentreY = itemY + itemHeight / 2;
+
+        const isInsideBox =
+          itemCentreX >= left &&
+          itemCentreX <= right &&
+          itemCentreY >= bottom &&
+          itemCentreY <= top;
+
+        const distanceFromCentre = Math.hypot(
+          itemCentreX - boxCentreX,
+          itemCentreY - boxCentreY
+        );
+
+        return {
+          text: String(item.str || "").trim(),
+          isInsideBox,
+          distanceFromCentre
+        };
+      })
+      .filter(item => item.text && item.isInsideBox)
+      .sort((a, b) => a.distanceFromCentre - b.distanceFromCentre);
+
+    if (candidates.length > 0) {
+      extractedFieldValues[fieldId] = candidates[0].text;
+    }
+  });
+}
+
+function getMappedFieldValue(fieldId) {
+  return String(extractedFieldValues[fieldId] || "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+function createMappedIssue({
+  id,
+  type = "fail",
+  title,
+  message,
+  currentValue = "",
+  suggestedValue = "",
+  fixLabel = "",
+  fieldId,
+  correctionText = ""
+}) {
+  const mappedField = LGSR_FIELD_MAP[fieldId];
+
+  if (!mappedField) {
+    console.warn(`Missing mapped field: ${fieldId}`);
+    return null;
+  }
+
+  return {
+    id,
+    type,
+    title,
+    message,
+    currentValue,
+    suggestedValue,
+    fixLabel,
+    highlight: {
+      page: mappedField.page,
+      x: mappedField.x,
+      y: mappedField.y,
+      width: mappedField.width,
+      height: mappedField.height,
+      label: `Issue ${detectedIssues.length + 1}`
+    },
+    correction: correctionText
+      ? {
+          page: mappedField.page,
+          text: correctionText,
+          x: mappedField.x,
+          y: mappedField.y,
+          width: mappedField.width,
+          height: mappedField.height,
+          fontSize: 7,
+          source: `Auto patch: ${mappedField.label}`
+        }
+      : null
+  };
+}
+function normaliseMappedValue(value) {
+  return String(value || "")
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, "")
+    .trim();
+}
+function checkAdditionalDetailsYesIssues(text) {
+  const fieldsToCheck = [
+    "gasTightnessTestSatisfactory",
+    "pipeworkVisualInspectionSatisfactory",
+    "equipotentialBonding",
+    "coAlarmFittedAndWorking",
+    "gasMeterPresent",
+    "emergencyControlValveAvailable",
+    "installationPass",
+    "smokeAlarmFittedAndWorking"
   ];
 
-  additionalDetailsRules.forEach((rule) => {
-    const matchedPattern = rule.patterns.find(pattern => pattern.test(extractedText));
+  fieldsToCheck.forEach(fieldId => {
+    const field = LGSR_FIELD_MAP[fieldId];
 
-    if (!matchedPattern) return;
+    if (!field) {
+      console.warn(`Missing mapped field: ${fieldId}`);
+      return;
+    }
 
-    const currentValueMatch = extractedText.match(matchedPattern);
-    const currentValue = currentValueMatch && currentValueMatch[1]
-      ? currentValueMatch[1].toUpperCase()
-      : "Not YES";
+    const expectedValue = String(field.expected || "YES").toUpperCase();
+    const correctionText = String(field.correctionText || expectedValue);
+    const actualValue = getMappedFieldValue(fieldId);
+    const cleanActualValue = normaliseMappedValue(actualValue);
+    const cleanExpectedValue = normaliseMappedValue(expectedValue);
 
-    detectedIssues.push({
-      id: `additional-details-${rule.id}`,
+    if (!actualValue) {
+      console.warn(`No mapped value found for ${field.label}`);
+      return;
+    }
+
+    if (cleanActualValue === cleanExpectedValue) {
+      return;
+    }
+
+    const issue = createMappedIssue({
+      id: `mapped-field-${fieldId}`,
       type: "fail",
-      title: `${rule.label} is not marked YES`,
+      title: `${field.label} is not marked ${expectedValue}`,
       message:
-        `${rule.label} should normally be marked YES in the Additional Details section. Review this field and correct if appropriate.`,
-      currentValue,
-      suggestedValue: "YES",
-      fixLabel: "Apply YES patch",
-      highlight: {
-        page: 1,
-        xPercent: rule.xPercent - 0.025,
-        yPercent: rule.yPercent,
-        width: 0.05,
-        height: 0.035,
-        label: `Issue ${detectedIssues.length + 1}`
-      },
-      correction: {
-        page: 1,
-        text: "YES",
-        xPercent: rule.xPercent,
-        yPercent: rule.yPercent,
-        width: 30,
-        height: 10,
-        fontSize: 7,
-        source: `Auto patch: ${rule.label}`
+        `${field.label} should be marked ${expectedValue}. The certificate currently shows ${actualValue}.`,
+      currentValue: actualValue,
+      suggestedValue: correctionText,
+      fixLabel: `Apply ${correctionText} patch`,
+      fieldId,
+      correctionText
+    });
+
+    if (issue) {
+      detectedIssues.push(issue);
+    }
+  });
+}
+/*
+  Appliance rule summary:
+
+  FL appliance:
+  - Landlords appliance = NO
+  - Safety device correct operation = N/A
+  - Ventilation satisfactory = YES
+  - Visual condition of flue = N/A
+  - Flue Flow Check = NA
+  - Spillage Test = NA
+  - Appliance serviced = NO
+  - Appliance safe to use = N/A
+  - Visual inspection only = YES
+
+  Gas pipe / CO detector:
+  - Visual inspection only = N/A
+
+  Non-FL landlord appliance:
+  - Landlords appliance = YES or NO
+  - Safety device correct operation = YES
+  - Ventilation satisfactory = YES for RS/OF
+  - Visual condition of flue = PASS or FAIL
+  - Appliance serviced = YES or NO
+  - Appliance safe to use = YES or NO
+  - Visual inspection only = N/A
+  - RS: Flue Flow Check = NA, Spillage Test = NA
+  - OF: Flue Flow Check = PASS, Spillage Test = PASS
+
+  Non-FL non-landlord appliance:
+  - Safety device correct operation = N/A
+  - Appliance serviced = NO or N/A
+
+   Safety category:
+  - If Safety Category is AR / ID / NCS / anything other than N/A or blank,
+    Appliance safe to use on the same row must be NO.
+  - If Appliance safe to use is NO,
+    Safety Category should not be blank or N/A.
+
+  Inactive RS appliance:
+  - If an RS appliance has all main readings as 0 / N/A / blank,
+    skip normal appliance-row checks.
+  - Capped At Request Of should then be Platform.
+*/
+
+function checkApplianceInspectionFields() {
+  const applianceRows = getParsedApplianceRows();
+
+  applianceRows.forEach((row, index) => {
+    const rowNumber = index + 1;
+    const rowLabel = row.visibleRowNumber || String(rowNumber);
+
+    const ignoredAppliance =
+  row.applianceType === "carbon monoxide detector" ||
+  row.applianceType === "gas pipe";
+
+   const flueType = normaliseMappedValue(row.flueType);
+const landlordApplianceValue = normaliseMappedValue(row.landlordsAppliance);
+const landlordOwned = landlordApplianceValue === "YES";
+const flFlueWithTechnicalReadings =
+  !ignoredAppliance &&
+  flueType === "FL" &&
+  hasTechnicalGasReadings(row);
+
+if (flFlueWithTechnicalReadings) {
+  const issueBox = row.flueTypeBox;
+
+  detectedIssues.push({
+    id: `appliance-${rowLabel}-flue-type-fl-has-technical-readings`,
+    type: "fail",
+    title: "Flue type may be incorrect",
+    message:
+      `Appliance row ${rowLabel} (${row.applianceType}) is marked as FL, but technical gas readings are present. FL appliances normally should not have combustion readings, ratios, operating pressure, or heat input recorded. The flue type may need to be RS.`,
+    currentValue: row.flueType,
+    suggestedValue: "RS",
+    fixLabel: issueBox ? "Apply RS patch" : "",
+    highlight: issueBox
+      ? {
+          page: issueBox.page,
+          x: issueBox.x,
+          y: issueBox.y,
+          width: issueBox.width,
+          height: issueBox.height,
+          label: `Issue ${detectedIssues.length + 1}`
+        }
+      : {
+          page: 1,
+          xPercent: 0.39,
+          yPercent: getApproxApplianceRowY(String(rowNumber)),
+          width: 0.05,
+          height: 0.04,
+          label: `Issue ${detectedIssues.length + 1}`
+        },
+    correction: issueBox
+      ? {
+          page: issueBox.page,
+          text: "RS",
+          x: issueBox.x,
+          y: issueBox.y,
+          width: issueBox.width,
+          height: issueBox.height,
+          fontSize: 7,
+          source: `Auto patch: Flue type row ${rowLabel}`
+        }
+      : null
+  });
+
+  return;
+}
+const inactiveRsAppliance =
+  !ignoredAppliance &&
+  flueType === "RS" &&
+  isInactiveApplianceRow(row);
+
+/*
+  If an RS appliance row contains no real gas readings, treat it as an inactive
+  appliance row. The main issue should be handled by Capped At Request Of,
+  rather than creating lots of separate appliance-table issues.
+*/
+if (inactiveRsAppliance) {
+  return;
+}
+
+const fieldsToCheck = [];
+if (flueType === "FL") {
+  fieldsToCheck.push({
+    key: "visualInspectionOnly",
+    label: "Visual inspection only",
+    value: row.visualInspectionOnly,
+    expected: "YES",
+    box: row.visualInspectionOnlyBox
+  });
+}
+
+if (ignoredAppliance) {
+  fieldsToCheck.push({
+    key: "visualInspectionOnly",
+    label: "Visual inspection only",
+    value: row.visualInspectionOnly,
+    expected: "N/A",
+    box: row.visualInspectionOnlyBox
+  });
+}
+
+if (!ignoredAppliance && flueType !== "FL" && landlordOwned) {
+  fieldsToCheck.push({
+    key: "visualInspectionOnly",
+    label: "Visual inspection only",
+    value: row.visualInspectionOnly,
+    expected: "N/A",
+    box: row.visualInspectionOnlyBox
+  });
+}
+    if (!ignoredAppliance && flueType === "FL") {
+      fieldsToCheck.push(
+        {
+          key: "landlordsAppliance",
+          label: "Landlords appliance",
+          value: row.landlordsAppliance,
+          expected: "NO",
+          box: row.landlordsApplianceBox
+        },
+        {
+          key: "safetyDeviceCorrect",
+          label: "Safety device correct operation",
+          value: row.safetyDeviceCorrect,
+          expected: "N/A",
+          box: row.safetyDeviceCorrectBox
+        },
+        {
+          key: "ventilationSatisfactory",
+          label: "Ventilation satisfactory",
+          value: row.ventilationSatisfactory,
+          expected: "YES",
+          box: row.ventilationSatisfactoryBox
+        },
+        {
+          key: "visualConditionOfFlue",
+          label: "Visual condition of flue",
+          value: row.visualConditionOfFlue,
+          expected: "N/A",
+          box: row.visualConditionOfFlueBox
+        },
+        {
+          key: "flueFlowCheck",
+          label: "Flue Flow Check",
+          value: row.flueFlowCheck,
+          expected: "NA",
+          box: row.flueFlowCheckBox
+        },
+        {
+          key: "spillageTest",
+          label: "Spillage Test",
+          value: row.spillageTest,
+          expected: "NA",
+          box: row.spillageTestBox
+        },
+        {
+          key: "applianceServiced",
+          label: "Appliance serviced",
+          value: row.applianceServiced,
+          expected: "NO",
+          box: row.applianceServicedBox
+        },
+    {
+  key: "applianceSafeToUse",
+  label: "Appliance safe to use",
+  value: row.applianceSafeToUse,
+  expected: "N/A",
+  box: row.applianceSafeToUseBox
+}
+      );
+    }
+
+    if (!ignoredAppliance && flueType !== "FL" && landlordOwned) {
+      fieldsToCheck.push(
+        {
+          key: "landlordsAppliance",
+          label: "Landlords appliance",
+          value: row.landlordsAppliance,
+          expected: "YES or NO",
+          box: row.landlordsApplianceBox,
+          customCompare: value => {
+            const clean = normaliseMappedValue(value);
+            return clean === "YES" || clean === "NO";
+          },
+          correctionText: "YES"
+        },
+        {
+          key: "safetyDeviceCorrect",
+          label: "Safety device correct operation",
+          value: row.safetyDeviceCorrect,
+          expected: "YES",
+          box: row.safetyDeviceCorrectBox
+        },
+        {
+          key: "ventilationSatisfactory",
+          label: "Ventilation satisfactory",
+          value: row.ventilationSatisfactory,
+          expected: ["RS", "OF"].includes(flueType) ? "YES" : "N/A",
+          box: row.ventilationSatisfactoryBox
+        },
+        {
+          key: "visualConditionOfFlue",
+          label: "Visual condition of flue",
+          value: row.visualConditionOfFlue,
+          expected: "PASS",
+          box: row.visualConditionOfFlueBox
+        },
+        {
+          key: "applianceServiced",
+          label: "Appliance serviced",
+          value: row.applianceServiced,
+          expected: "YES or NO",
+          box: row.applianceServicedBox,
+          customCompare: value => {
+            const clean = normaliseMappedValue(value);
+            return clean === "YES" || clean === "NO";
+          },
+          correctionText: "YES"
+        },
+       {
+  key: "applianceSafeToUse",
+  label: "Appliance safe to use",
+  value: row.applianceSafeToUse,
+  expected: "YES or NO",
+  box: row.applianceSafeToUseBox,
+  customCompare: value => {
+    const clean = normaliseMappedValue(value);
+    return clean === "YES" || clean === "NO";
+  },
+  correctionText: "YES"
+}
+      );
+
+      if (flueType === "RS") {
+        fieldsToCheck.push(
+          {
+            key: "flueFlowCheck",
+            label: "Flue Flow Check",
+            value: row.flueFlowCheck,
+            expected: "NA",
+            box: row.flueFlowCheckBox
+          },
+          {
+            key: "spillageTest",
+            label: "Spillage Test",
+            value: row.spillageTest,
+            expected: "NA",
+            box: row.spillageTestBox
+          }
+        );
       }
+
+      if (flueType === "OF") {
+        fieldsToCheck.push(
+          {
+            key: "flueFlowCheck",
+            label: "Flue Flow Check",
+            value: row.flueFlowCheck,
+            expected: "PASS",
+            box: row.flueFlowCheckBox
+          },
+          {
+            key: "spillageTest",
+            label: "Spillage Test",
+            value: row.spillageTest,
+            expected: "PASS",
+            box: row.spillageTestBox
+          }
+        );
+      }
+    }
+
+    if (!ignoredAppliance && flueType !== "FL" && !landlordOwned) {
+      fieldsToCheck.push(
+        {
+          key: "safetyDeviceCorrect",
+          label: "Safety device correct operation",
+          value: row.safetyDeviceCorrect,
+          expected: "N/A",
+          box: row.safetyDeviceCorrectBox
+        },
+        {
+          key: "applianceServiced",
+          label: "Appliance serviced",
+          value: row.applianceServiced,
+          expected: "NO or N/A",
+          box: row.applianceServicedBox,
+          customCompare: value => {
+            const clean = normaliseMappedValue(value);
+            return clean === "NO" || clean === "NA";
+          },
+          correctionText: "NO"
+        }
+      );
+    }
+const safetyCategoryValue = normaliseMappedValue(row.safetyCategory);
+const applianceSafeToUseValue = normaliseMappedValue(row.applianceSafeToUse);
+
+const safetyCategoryHasIssue =
+  safetyCategoryValue &&
+  safetyCategoryValue !== "NA";
+
+if (safetyCategoryHasIssue && applianceSafeToUseValue !== "NO") {
+  const issueBox = row.applianceSafeToUseBox;
+
+  detectedIssues.push({
+    id: `appliance-${rowLabel}-safe-to-use-not-no-with-safety-category`,
+    type: "fail",
+    title: "Appliance safe to use should be NO when Safety Category is recorded",
+    message:
+      `Appliance row ${rowLabel} (${row.applianceType}) has Safety Category marked ${row.safetyCategory}, but Appliance safe to use is marked ${row.applianceSafeToUse}. If a Safety Category is recorded, Appliance safe to use should be NO.`,
+    currentValue: row.applianceSafeToUse,
+    suggestedValue: "NO",
+    fixLabel: issueBox ? "Apply NO patch" : "",
+    highlight: issueBox
+      ? {
+          page: issueBox.page,
+          x: issueBox.x,
+          y: issueBox.y,
+          width: issueBox.width,
+          height: issueBox.height,
+          label: `Issue ${detectedIssues.length + 1}`
+        }
+      : {
+          page: 1,
+          xPercent: 0.55,
+          yPercent: getApproxApplianceRowY(String(rowNumber)),
+          width: 0.40,
+          height: 0.04,
+          label: `Issue ${detectedIssues.length + 1}`
+        },
+    correction: issueBox
+      ? {
+          page: issueBox.page,
+          text: "NO",
+          x: issueBox.x,
+          y: issueBox.y,
+          width: issueBox.width,
+          height: issueBox.height,
+          fontSize: 7,
+          source: `Auto patch: Appliance safe to use row ${rowLabel}`
+        }
+      : null
+  });
+}
+    if (applianceSafeToUseValue === "NO" && !safetyCategoryHasIssue) {
+  const issueBox = row.safetyCategoryBox;
+
+  detectedIssues.push({
+    id: `appliance-${rowLabel}-safety-category-missing-with-safe-to-use-no`,
+    type: "fail",
+    title: "Safety Category should be recorded when Appliance safe to use is NO",
+    message:
+      `Appliance row ${rowLabel} (${row.applianceType}) has Appliance safe to use marked NO, but Safety Category is blank or N/A. If an appliance is not safe to use, a Safety Category should be recorded.`,
+    currentValue: row.safetyCategory || "Blank/N/A",
+    suggestedValue: "Review Safety Category",
+    fixLabel: "",
+    highlight: issueBox
+      ? {
+          page: issueBox.page,
+          x: issueBox.x,
+          y: issueBox.y,
+          width: issueBox.width,
+          height: issueBox.height,
+          label: `Issue ${detectedIssues.length + 1}`
+        }
+      : {
+          page: 1,
+          xPercent: 0.70,
+          yPercent: getApproxApplianceRowY(String(rowNumber)),
+          width: 0.12,
+          height: 0.04,
+          label: `Issue ${detectedIssues.length + 1}`
+        },
+    correction: null
+  });
+}
+    fieldsToCheck.forEach(field => {
+      const actualValue = String(field.value || "").trim();
+
+      if (!actualValue) return;
+
+      if (field.customCompare && field.customCompare(actualValue)) {
+        return;
+      }
+
+      if (!field.customCompare && normaliseMappedValue(actualValue) === normaliseMappedValue(field.expected)) {
+        return;
+      }
+
+      const issueBox = field.box;
+      const patchText = field.correctionText || field.expected;
+
+      detectedIssues.push({
+        id: `appliance-${rowLabel}-${field.key}`,
+        type: "fail",
+        title: `${field.label} is not marked ${field.expected}`,
+        message:
+          `Appliance row ${rowLabel} (${row.applianceType}) has ${field.label} marked ${actualValue}. Expected ${field.expected}.`,
+        currentValue: actualValue,
+        suggestedValue: field.expected,
+        fixLabel: issueBox ? `Apply ${patchText} patch` : "",
+        highlight: issueBox
+          ? {
+              page: issueBox.page,
+              x: issueBox.x,
+              y: issueBox.y,
+              width: issueBox.width,
+              height: issueBox.height,
+              label: `Issue ${detectedIssues.length + 1}`
+            }
+          : {
+              page: 1,
+              xPercent: 0.55,
+              yPercent: getApproxApplianceRowY(String(rowNumber)),
+              width: 0.40,
+              height: 0.04,
+              label: `Issue ${detectedIssues.length + 1}`
+            },
+        correction: issueBox
+          ? {
+              page: issueBox.page,
+              text: patchText,
+              x: issueBox.x,
+              y: issueBox.y,
+              width: issueBox.width,
+              height: issueBox.height,
+              fontSize: 7,
+              source: `Auto patch: ${field.label} row ${rowLabel}`
+            }
+          : null
+      });
     });
   });
 }
-function checkCarbonMonoxideDetectorListed(text) {
-  const hasCarbonMonoxideDetector =
-    /carbon\s+monoxide\s+detector/i.test(extractedText);
 
-  if (hasCarbonMonoxideDetector) return;
+function checkNumberOfAppliancesTested() {
+  const actualValue = getMappedFieldValue("numberOfAppliancesTested");
+  const expectedValue = String(getParsedApplianceRows().filter(row => {
+    const flueIsValid = ["RS", "FL", "OF"].includes(normaliseMappedValue(row.flueType));
+    const landlordOwned = normaliseMappedValue(row.landlordsAppliance) === "YES";
+
+    const ignoredAppliance =
+      row.applianceType === "carbon monoxide detector" ||
+      row.applianceType === "gas pipe";
+
+    return flueIsValid && landlordOwned && !ignoredAppliance;
+  }).length);
+
+  if (!actualValue) {
+    console.warn("No mapped value found for Number Of Appliance Tested");
+    return;
+  }
+
+  if (normaliseMappedValue(actualValue) === normaliseMappedValue(expectedValue)) {
+    return;
+  }
+
+  const issue = createMappedIssue({
+    id: "mapped-field-numberOfAppliancesTested",
+    type: "fail",
+    title: `Number Of Appliance Tested should be ${expectedValue}`,
+    message:
+      `Number Of Appliance Tested should be ${expectedValue}. The certificate currently shows ${actualValue}. Only appliances with flue type RS, FL, or OF and Landlords appliance marked YES should be counted.`,
+    currentValue: actualValue,
+    suggestedValue: expectedValue,
+    fixLabel: `Apply ${expectedValue} patch`,
+    fieldId: "numberOfAppliancesTested",
+    correctionText: expectedValue
+  });
+
+  if (issue) {
+    detectedIssues.push(issue);
+  }
+}
+function getParsedApplianceRows() {
+  const pageOneTokens = extractedTextTokensByPage[1] || [];
+
+  const applianceRows = [];
+
+  pageOneTokens.forEach((token, index) => {
+    const flueType = normaliseMappedValue(token.text);
+
+    if (!["RS", "FL", "OF"].includes(flueType)) return;
+
+    const co2LowToken = pageOneTokens[index - 4];
+    const co2HighToken = pageOneTokens[index - 3];
+    const coLowToken = pageOneTokens[index - 2];
+    const coHighToken = pageOneTokens[index - 1];
+
+    const operatingPressureToken = pageOneTokens[index + 1];
+    const analyserLowRatioToken = pageOneTokens[index + 2];
+    const analyserHighRatioToken = pageOneTokens[index + 3];
+    const safetyDeviceCorrectToken = pageOneTokens[index + 4];
+    const ventilationSatisfactoryToken = pageOneTokens[index + 5];
+    const visualConditionOfFlueToken = pageOneTokens[index + 6];
+    const flueFlowCheckToken = pageOneTokens[index + 7];
+    const spillageTestToken = pageOneTokens[index + 8];
+    const applianceServicedToken = pageOneTokens[index + 9];
+    const applianceSafeToUseToken = pageOneTokens[index + 10];
+    const landlordsApplianceToken = pageOneTokens[index + 11];
+    const safetyCategoryToken = pageOneTokens[index + 12];
+    const visualInspectionOnlyToken = pageOneTokens[index + 13];
+
+    const nearbyBefore = pageOneTokens
+      .slice(Math.max(0, index - 18), index)
+      .map(item => item.text)
+      .join(" ");
+
+    const nearbyAfter = pageOneTokens
+      .slice(index, index + 16)
+      .map(item => item.text)
+      .join(" ");
+
+    const applianceType = detectApplianceTypeFromText(nearbyBefore);
+    const visibleRowNumber = detectVisibleApplianceRowNumber(nearbyBefore);
+
+    if (!visibleRowNumber) {
+      return;
+    }
+
+    const analyserLowRatioBox = makeApplianceDynamicBoxFromRowAnchor(token, "analyserLowRatio");
+const analyserHighRatioBox = makeApplianceDynamicBoxFromRowAnchor(token, "analyserHighRatio");
+const safetyDeviceCorrectBox = makeApplianceDynamicBoxFromRowAnchor(token, "safetyDeviceCorrect");
+const ventilationSatisfactoryBox = makeApplianceDynamicBoxFromRowAnchor(token, "ventilationSatisfactory");
+const visualConditionOfFlueBox = makeApplianceDynamicBoxFromRowAnchor(token, "visualConditionOfFlue");
+const flueFlowCheckBox = makeApplianceDynamicBoxFromRowAnchor(token, "flueFlowCheck");
+const spillageTestBox = makeApplianceDynamicBoxFromRowAnchor(token, "spillageTest");
+const applianceServicedBox = makeApplianceDynamicBoxFromRowAnchor(token, "applianceServiced");
+const applianceSafeToUseBox = makeApplianceDynamicBoxFromRowAnchor(token, "applianceSafeToUse");
+    const flueTypeBox = makeApplianceDynamicBoxFromRowAnchor(token, "flueType");
+const landlordsApplianceBox = makeApplianceDynamicBoxFromRowAnchor(token, "landlordsAppliance");
+const safetyCategoryBox = makeApplianceDynamicBoxFromRowAnchor(token, "safetyCategory");
+const visualInspectionOnlyBox = makeApplianceDynamicBoxFromRowAnchor(token, "visualInspectionOnly");
+
+applianceRows.push({
+  visibleRowNumber,
+  applianceType,
+  flueType,
+flueTypeBox,
+  
+  co2Low: getTokenText(co2LowToken),
+  co2High: getTokenText(co2HighToken),
+  coLow: getTokenText(coLowToken),
+  coHigh: getTokenText(coHighToken),
+
+  operatingPressure: getTokenText(operatingPressureToken),
+
+  analyserLowRatio: getTextFromBox(analyserLowRatioBox) || getTokenText(analyserLowRatioToken),
+  analyserHighRatio: getTextFromBox(analyserHighRatioBox) || getTokenText(analyserHighRatioToken),
+  safetyDeviceCorrect: getTextFromBox(safetyDeviceCorrectBox),
+  ventilationSatisfactory: getTextFromBox(ventilationSatisfactoryBox),
+  visualConditionOfFlue: getTextFromBox(visualConditionOfFlueBox),
+  flueFlowCheck: getTextFromBox(flueFlowCheckBox),
+  spillageTest: getTextFromBox(spillageTestBox),
+  applianceServiced: getTextFromBox(applianceServicedBox),
+  applianceSafeToUse: getTextFromBox(applianceSafeToUseBox),
+landlordsAppliance: getTextFromBox(landlordsApplianceBox),
+safetyCategory: getTextFromBox(safetyCategoryBox),
+visualInspectionOnly: getTextFromBox(visualInspectionOnlyBox),
+
+  co2LowBox: makePatchBoxFromToken(co2LowToken),
+  co2HighBox: makePatchBoxFromToken(co2HighToken),
+  coLowBox: makePatchBoxFromToken(coLowToken),
+  coHighBox: makePatchBoxFromToken(coHighToken),
+
+  analyserLowRatioBox,
+  analyserHighRatioBox,
+  safetyDeviceCorrectBox,
+  ventilationSatisfactoryBox,
+  visualConditionOfFlueBox,
+  flueFlowCheckBox,
+  spillageTestBox,
+  applianceServicedBox,
+ applianceSafeToUseBox,
+landlordsApplianceBox,
+safetyCategoryBox,
+visualInspectionOnlyBox,
+
+  nearbyBefore,
+  nearbyAfter
+});
+  });
+
+  console.log("Parsed appliance rows:", applianceRows);
+
+console.log(
+  "Appliance safe to use debug:",
+  applianceRows.map(row => ({
+    row: row.visibleRowNumber,
+    type: row.applianceType,
+    flueType: row.flueType,
+    applianceServiced: row.applianceServiced,
+    applianceSafeToUse: row.applianceSafeToUse,
+    landlordsAppliance: row.landlordsAppliance,
+    safetyCategory: row.safetyCategory,
+    nearbyAfter: row.nearbyAfter
+  }))
+);
+
+  return applianceRows;
+}
+
+function detectApplianceTypeFromText(text) {
+  const cleanText = normaliseText(text);
+
+  const applianceTypes = [
+    "carbon monoxide detector",
+    "gas pipe",
+    "tenant owned gas appliance",
+    "combi boiler",
+    "condensing boiler",
+    "system boiler",
+    "heat only boiler",
+    "back boiler",
+    "water heater",
+    "gas fire",
+    "fire",
+    "gas appliance"
+  ];
+
+  return applianceTypes.find(type => cleanText.includes(type)) || "Unknown appliance";
+}
+
+function detectVisibleApplianceRowNumber(text) {
+  const clean = String(text || "").replace(/\s+/g, " ").trim();
+
+  /*
+    The real visible appliance row number normally appears immediately before
+    the appliance location, for example:
+    1 Kitchen
+    2 External
+    3 Airing Cupboard
+    4 Landing
+
+    We deliberately do NOT use a loose "last number found" fallback anymore,
+    because boiler models/readings can contain numbers like 72, 28, 105 etc.
+  */
+  const rowMatch = clean.match(
+    /(?:^|\s)(\d{1,2})\s+(Kitchen|External|Landing|Hall|Lounge|Bedroom|Bathroom|Garage|Cupboard|Airing\s+Cupboard|Utility|Dining|Conservatory|Unknown)\b/i
+  );
+
+  if (rowMatch) {
+    return rowMatch[1];
+  }
+
+  return null;
+}
+function checkCappedAtRequestOf() {
+  const actualValue = getMappedFieldValue("cappedAtRequestOf");
+  const expectedValue = hasInactiveRsGasAppliance() ? "Platform" : "Not Capped";
+
+  if (!actualValue) {
+    console.warn("No mapped value found for Capped At Request Of");
+    return;
+  }
+
+  if (normaliseMappedValue(actualValue) === normaliseMappedValue(expectedValue)) {
+    return;
+  }
+
+  const issue = createMappedIssue({
+    id: "mapped-field-cappedAtRequestOf",
+    type: "fail",
+    title: `Capped At Request Of should be ${expectedValue}`,
+    message:
+      `Capped At Request Of should be ${expectedValue}. The certificate currently shows ${actualValue}.`,
+    currentValue: actualValue,
+    suggestedValue: expectedValue,
+    fixLabel: `Apply ${expectedValue} patch`,
+    fieldId: "cappedAtRequestOf",
+    correctionText: expectedValue
+  });
+
+  if (issue) {
+    detectedIssues.push(issue);
+  }
+}
+function hasInactiveRsGasAppliance() {
+  const applianceRows = getParsedApplianceRows();
+
+  const inactiveRsRows = applianceRows.filter(row => {
+    const ignoredAppliance =
+      row.applianceType === "carbon monoxide detector" ||
+      row.applianceType === "gas pipe";
+
+    if (ignoredAppliance) return false;
+
+    const flueType = normaliseMappedValue(row.flueType);
+
+    if (flueType !== "RS") return false;
+
+    return isInactiveApplianceRow(row);
+  });
+
+  console.log("Inactive RS appliance rows:", inactiveRsRows);
+
+  return inactiveRsRows.length > 0;
+}
+function hasTechnicalGasReadings(row) {
+  const technicalValues = [
+    row.co2ReadingLow,
+    row.co2ReadingHigh,
+    row.coReadingLow,
+    row.coReadingHigh,
+    row.operatingPressure,
+    row.analyserLowRatio,
+    row.analyserHighRatio
+  ];
+
+  return technicalValues.some(value => {
+    const normalised = normaliseMappedValue(value);
+
+    if (!normalised || normalised === "NA") {
+      return false;
+    }
+
+    const numericValue = Number(String(value).replace(/[^\d.-]/g, ""));
+
+    if (!Number.isFinite(numericValue)) {
+      return false;
+    }
+
+    return numericValue !== 0;
+  });
+}
+function isInactiveApplianceRow(row) {
+  const valuesToCheck = [
+    row.co2Low,
+    row.co2High,
+    row.coLow,
+    row.coHigh,
+    row.operatingPressure,
+    row.analyserLowRatio,
+    row.analyserHighRatio
+  ];
+
+  return valuesToCheck.every(value => isZeroOrNAValue(value));
+}
+
+function isZeroOrNAValue(value) {
+  const clean = normaliseMappedValue(value);
+
+  return (
+    clean === "0" ||
+    clean === "00" ||
+    clean === "000" ||
+    clean === "0000" ||
+    clean === "NA" ||
+    clean === "N/A" ||
+    clean === ""
+  );
+}
+  
+function checkCarbonMonoxideDetectorListed(text) {
+  const hasCarbonMonoxideDetectorRow = hasCarbonMonoxideDetectorApplianceRow();
+
+  if (hasCarbonMonoxideDetectorRow) return;
 
   detectedIssues.push({
     id: "carbon-monoxide-detector-missing",
     type: "fail",
-    title: "Carbon Monoxide Detector is not listed",
+    title: "Carbon Monoxide Detector row is missing",
     message:
-      "At least one appliance row should list Carbon Monoxide Detector in the Appliance Type column. No Carbon Monoxide Detector row was detected on this certificate.",
-    currentValue: "Not found",
-    suggestedValue: "Carbon Monoxide Detector",
+      "A Carbon Monoxide Detector has not been entered as one of the appliance rows. This cannot be corrected with a patch. The certificate should be rewritten or reissued with the Carbon Monoxide Detector included as an appliance row.",
+    currentValue: "Not listed",
+    suggestedValue: "Rewrite certificate",
     fixLabel: "",
     highlight: {
       page: 1,
-      xPercent: 0.105,
-      yPercent: 0.545,
-      width: 0.085,
-      height: 0.18,
+      xPercent: 0.07,
+      yPercent: 0.525,
+      width: 0.20,
+      height: 0.22,
       label: `Issue ${detectedIssues.length + 1}`
     },
     correction: null
   });
 }
+
+function hasCarbonMonoxideDetectorApplianceRow() {
+  const pageOneMatch = extractedText.match(/--- Page 1 ---([\s\S]*?)(--- Page \d+ ---|$)/i);
+  const pageOneText = pageOneMatch ? pageOneMatch[1] : extractedText;
+
+  const normalisedPageOne = normaliseText(pageOneText);
+
+  const hasDetectorText =
+    normalisedPageOne.includes("carbon monoxide detector") ||
+    normalisedPageOne.includes("carbon monoxide") ||
+    normalisedPageOne.includes("co detector");
+
+  if (!hasDetectorText) {
+    return false;
+  }
+
+  /*
+    Extra safeguard:
+    Carbon Monoxide Detector should appear in the appliance table area,
+    normally before the company registration/declaration section.
+  */
+  const applianceTableMatch = normalisedPageOne.match(
+    /appliance details[\s\S]*?(declaration of gas safety|engineers report|warning\(s\)|operative details|$)/
+  );
+
+  if (!applianceTableMatch) {
+    return hasDetectorText;
+  }
+
+  const applianceTableText = applianceTableMatch[0];
+
+  return (
+    applianceTableText.includes("carbon monoxide detector") ||
+    applianceTableText.includes("co detector")
+  );
+}
  async function checkSignatureBoxes() {
   if (!pdfDoc) return;
+
+  const signatureFields = [
+    {
+      fieldId: "customerSignature",
+      label: "Customer's Signature",
+      message: "The Customer's Signature box appears to be blank."
+    },
+    {
+      fieldId: "operativeSignature",
+      label: "Operative's Signature",
+      message: "The Operative's Signature box appears to be blank."
+    }
+  ];
 
   const page = await pdfDoc.getPage(1);
   const scale = 2;
@@ -940,64 +2593,75 @@ function checkCarbonMonoxideDetectorListed(text) {
     viewport
   }).promise;
 
-  const signatureBoxes = [
-    {
-      id: "customer-signature",
-      label: "Customer's Signature",
-      message: "The Customer's Signature box appears to be blank.",
-      region: {
-        left: 0.425,
-        top: 0.595,
-        width: 0.150,
-        height: 0.050
-      },
-      highlight: {
-        page: 1,
-        xPercent: 0.415,
-        yPercent: 0.398,
-        width: 0.190,
-        height: 0.080,
-        label: `Issue ${detectedIssues.length + 1}`
-      }
-    },
-    {
-      id: "operative-signature",
-      label: "Operative's Signature",
-      message: "The Operative's Signature box appears to be blank.",
-      region: {
-        left: 0.815,
-        top: 0.595,
-        width: 0.150,
-        height: 0.050
-      },
-      highlight: {
-        page: 1,
-        xPercent: 0.795,
-        yPercent: 0.220,
-        width: 0.190,
-        height: 0.080,
-        label: `Issue ${detectedIssues.length + 1}`
-      }
-    }
-  ];
+  signatureFields.forEach(fieldInfo => {
+    const mappedField = LGSR_FIELD_MAP[fieldInfo.fieldId];
 
-  signatureBoxes.forEach(box => {
-    const hasSignature = regionHasSignatureInk(signatureCanvas, box.region);
+    if (!mappedField) {
+      console.warn(`Missing mapped signature field: ${fieldInfo.fieldId}`);
+      return;
+    }
+
+    const hasSignature = mappedRegionHasSignatureInk(signatureCanvas, mappedField, scale);
 
     if (hasSignature) return;
 
     detectedIssues.push({
-      id: `missing-${box.id}`,
+      id: `missing-${fieldInfo.fieldId}`,
       type: "fail",
-      title: `${box.label} appears to be missing`,
-      message: box.message,
+      title: `${fieldInfo.label} appears to be missing`,
+      message: fieldInfo.message,
       currentValue: "Blank",
       suggestedValue: "Signature required",
       fixLabel: "",
-      highlight: box.highlight,
+      highlight: {
+        page: mappedField.page,
+        x: mappedField.x,
+        y: mappedField.y,
+        width: mappedField.width,
+        height: mappedField.height,
+        label: `Issue ${detectedIssues.length + 1}`
+      },
       correction: null
     });
   });
+}
+    function mappedRegionHasSignatureInk(sourceCanvas, mappedField, scale) {
+  const ctx = sourceCanvas.getContext("2d");
+
+  const x = Math.floor(mappedField.x * scale);
+  const y = Math.floor((sourceCanvas.height / scale - mappedField.y - mappedField.height) * scale);
+  const width = Math.floor(mappedField.width * scale);
+  const height = Math.floor(mappedField.height * scale);
+
+  const imageData = ctx.getImageData(x, y, width, height);
+  const data = imageData.data;
+
+  let darkPixels = 0;
+  let lightGreyPixels = 0;
+  let nonWhitePixels = 0;
+
+  for (let i = 0; i < data.length; i += 4) {
+    const red = data[i];
+    const green = data[i + 1];
+    const blue = data[i + 2];
+
+    const isDark = red < 210 && green < 210 && blue < 210;
+    const isLightGrey = red < 245 && green < 245 && blue < 245;
+
+    if (isDark) darkPixels++;
+    if (isLightGrey) lightGreyPixels++;
+    if (red < 250 || green < 250 || blue < 250) nonWhitePixels++;
+  }
+
+  console.log(mappedField.label, {
+    darkPixels,
+    lightGreyPixels,
+    nonWhitePixels,
+    width,
+    height
+  });
+
+  return darkPixels > 80 || lightGreyPixels > 180 || nonWhitePixels > 220;
 }
   function regionHasSignatureInk(sourceCanvas, region) {
   const ctx = sourceCanvas.getContext("2d");
@@ -1067,6 +2731,145 @@ function checkCarbonMonoxideDetectorListed(text) {
 
   return darkPixels > 90 && diagonalLikePixels > 35;
 }
+   
+  function checkCOCO2RatioCalculationsFromParsedRows() {
+  const applianceRows = getParsedApplianceRows();
+  const ratioTolerance = 0.0001;
+
+  applianceRows.forEach((row, index) => {
+    const rowNumber = index + 1;
+    const rowLabel = row.visibleRowNumber || String(rowNumber);
+
+    const ignoredAppliance =
+      row.applianceType === "carbon monoxide detector" ||
+      row.applianceType === "gas pipe";
+
+    const landlordOwned = normaliseMappedValue(row.landlordsAppliance) === "YES";
+
+    if (ignoredAppliance || !landlordOwned) {
+      return;
+    }
+
+    const co2Low = parseNumber(row.co2Low);
+    const co2High = parseNumber(row.co2High);
+    const coLow = parseNumber(row.coLow);
+    const coHigh = parseNumber(row.coHigh);
+    const recordedLowRatio = parseNumber(row.analyserLowRatio);
+    const recordedHighRatio = parseNumber(row.analyserHighRatio);
+
+    const canCheckLow =
+      isRealNumber(co2Low) &&
+      isRealNumber(coLow) &&
+      isRealNumber(recordedLowRatio) &&
+      co2Low > 0 &&
+      coLow >= 0;
+
+    if (canCheckLow) {
+      const expectedLowRatio = calculateCOCO2Ratio(coLow, co2Low);
+      const suggestedLowRatio = formatRatio(expectedLowRatio);
+      const currentLowRatio = formatRatio(recordedLowRatio);
+      const lowRatioBox = row.analyserLowRatioBox;
+
+      if (Math.abs(expectedLowRatio - recordedLowRatio) > ratioTolerance) {
+        detectedIssues.push({
+          id: `appliance-${rowLabel}-low-co-co2-ratio`,
+          type: "fail",
+          title: "CO/CO₂ low ratio appears incorrect",
+          message:
+            `Appliance row ${rowLabel} (${row.applianceType}) has CO₂ low ${co2Low}%, CO low ${coLow}ppm. Expected low ratio is ${suggestedLowRatio}, but the certificate shows ${currentLowRatio}.`,
+          currentValue: currentLowRatio,
+          suggestedValue: suggestedLowRatio,
+          fixLabel: "Apply calculated low ratio",
+          highlight: lowRatioBox
+            ? {
+                page: lowRatioBox.page,
+                x: lowRatioBox.x,
+                y: lowRatioBox.y,
+                width: lowRatioBox.width,
+                height: lowRatioBox.height,
+                label: `Issue ${detectedIssues.length + 1}`
+              }
+            : {
+                page: 1,
+                xPercent: 0.50,
+                yPercent: getApproxApplianceRowY(String(rowNumber)),
+                width: 0.08,
+                height: 0.04,
+                label: `Issue ${detectedIssues.length + 1}`
+              },
+          correction: lowRatioBox
+            ? {
+                page: lowRatioBox.page,
+                text: suggestedLowRatio,
+                x: lowRatioBox.x,
+                y: lowRatioBox.y,
+                width: lowRatioBox.width,
+                height: lowRatioBox.height,
+                fontSize: 7,
+                source: `Auto patch: CO/CO2 low ratio row ${rowLabel}`
+              }
+            : null
+        });
+      }
+    }
+
+    const canCheckHigh =
+      isRealNumber(co2High) &&
+      isRealNumber(coHigh) &&
+      isRealNumber(recordedHighRatio) &&
+      co2High > 0 &&
+      coHigh >= 0;
+
+    if (canCheckHigh) {
+      const expectedHighRatio = calculateCOCO2Ratio(coHigh, co2High);
+      const suggestedHighRatio = formatRatio(expectedHighRatio);
+      const currentHighRatio = formatRatio(recordedHighRatio);
+      const highRatioBox = row.analyserHighRatioBox;
+
+      if (Math.abs(expectedHighRatio - recordedHighRatio) > ratioTolerance) {
+        detectedIssues.push({
+          id: `appliance-${rowLabel}-high-co-co2-ratio`,
+          type: "fail",
+          title: "CO/CO₂ high ratio appears incorrect",
+          message:
+            `Appliance row ${rowLabel} (${row.applianceType}) has CO₂ high ${co2High}%, CO high ${coHigh}ppm. Expected high ratio is ${suggestedHighRatio}, but the certificate shows ${currentHighRatio}.`,
+          currentValue: currentHighRatio,
+          suggestedValue: suggestedHighRatio,
+          fixLabel: "Apply calculated high ratio",
+          highlight: highRatioBox
+            ? {
+                page: highRatioBox.page,
+                x: highRatioBox.x,
+                y: highRatioBox.y,
+                width: highRatioBox.width,
+                height: highRatioBox.height,
+                label: `Issue ${detectedIssues.length + 1}`
+              }
+            : {
+                page: 1,
+                xPercent: 0.54,
+                yPercent: getApproxApplianceRowY(String(rowNumber)),
+                width: 0.08,
+                height: 0.04,
+                label: `Issue ${detectedIssues.length + 1}`
+              },
+          correction: highRatioBox
+            ? {
+                page: highRatioBox.page,
+                text: suggestedHighRatio,
+                x: highRatioBox.x,
+                y: highRatioBox.y,
+                width: highRatioBox.width,
+                height: highRatioBox.height,
+                fontSize:7,
+                source: `Auto patch: CO/CO2 high ratio row ${rowLabel}`
+              }
+            : null
+        });
+      }
+    }
+  });
+}
     function checkCOCO2RatioCalculations() {
   const ratioTolerance = 0.0001;
 
@@ -1093,11 +2896,11 @@ function checkCarbonMonoxideDetectorListed(text) {
     const applianceLabel = `${applianceType} row ${rowNumber}${location ? ` (${location})` : ""}`;
 
     const canCheckLow =
-      isRealNumber(co2Low) &&
-      isRealNumber(coLow) &&
-      isRealNumber(ratioLow) &&
-      co2Low > 0 &&
-      coLow > 0 &&
+  isRealNumber(co2Low) &&
+  isRealNumber(coLow) &&
+  isRealNumber(recordedLowRatio) &&
+  co2Low > 0 &&
+  coLow >= 0;
       ratioLow > 0;
 
     if (canCheckLow) {
@@ -1128,7 +2931,7 @@ function checkCarbonMonoxideDetectorListed(text) {
             yPercent: getApproxApplianceRowY(rowNumber),
             width: 42,
             height: 10,
-            fontSize: 6,
+            fontSize: 7,
             source: `Auto patch: CO/CO2 low ratio row ${rowNumber}`
           }
         });
@@ -1136,11 +2939,11 @@ function checkCarbonMonoxideDetectorListed(text) {
     }
 
     const canCheckHigh =
-      isRealNumber(co2High) &&
-      isRealNumber(coHigh) &&
-      isRealNumber(ratioHigh) &&
-      co2High > 0 &&
-      coHigh >= 0 &&
+  isRealNumber(co2High) &&
+  isRealNumber(coHigh) &&
+  isRealNumber(recordedHighRatio) &&
+  co2High > 0 &&
+  coHigh >= 0;
       ratioHigh >= 0;
 
     if (canCheckHigh) {
@@ -1171,7 +2974,7 @@ correction: {
   yPercent: getApproxApplianceRowY(rowNumber),
   width: 42,
   height: 10,
-  fontSize: 6,
+  fontSize: 7,
   source: `Auto patch: CO/CO2 high ratio row ${rowNumber}`
 }
         });
@@ -1290,8 +3093,11 @@ function getApproxApplianceRowY(rowNumber) {
     return;
   }
 
-  issuesBox.innerHTML = unresolvedIssues.map((issue, index) => {
-    const icon = issue.type === "fail" ? "❌" : issue.type === "warn" ? "⚠️" : "ℹ️";
+ issuesBox.innerHTML = unresolvedIssues.map((issue, index) => {
+  const icon = issue.type === "fail" ? "❌" : issue.type === "warn" ? "⚠️" : "ℹ️";
+  const issueLabel =
+    issue.highlight?.label ||
+    `Issue ${issues.findIndex(item => item.id === issue.id) + 1}`;
 
     const actionButtons = `
       ${issue.highlight ? `<button class="blue-btn" onclick="focusIssue('${issue.id}')">Show on PDF</button>` : ""}
@@ -1300,7 +3106,7 @@ function getApproxApplianceRowY(rowNumber) {
 
     return `
       <div class="issue ${issue.type}">
-        <div class="issue-title">${icon} Issue ${index + 1}: ${escapeHtml(issue.title)}</div>
+        <div class="issue-title">${icon} ${escapeHtml(issueLabel)}: ${escapeHtml(issue.title)}</div>
         <div>${escapeHtml(issue.message)}</div>
         ${
           issue.currentValue || issue.suggestedValue
@@ -1339,16 +3145,31 @@ function renderIssueHighlights() {
       box.classList.add("active");
     }
 
-    const x = issue.highlight.xPercent * pdfWidth;
-    const centreY = issue.highlight.yPercent * pdfHeight;
-    const width = issue.highlight.width * pdfWidth;
-    const height = issue.highlight.height * pdfHeight;
-    const y = centreY - height / 2;
+   let x;
+let y;
+let width;
+let height;
 
-    const left = (x / pdfWidth) * rect.width;
-    const top = ((pdfHeight - y - height) / pdfHeight) * rect.height;
-    const boxWidth = (width / pdfWidth) * rect.width;
-    const boxHeight = (height / pdfHeight) * rect.height;
+if (
+  typeof issue.highlight.x === "number" &&
+  typeof issue.highlight.y === "number"
+) {
+  x = issue.highlight.x;
+  y = issue.highlight.y;
+  width = issue.highlight.width;
+  height = issue.highlight.height;
+} else {
+  x = issue.highlight.xPercent * pdfWidth;
+  const centreY = issue.highlight.yPercent * pdfHeight;
+  width = issue.highlight.width * pdfWidth;
+  height = issue.highlight.height * pdfHeight;
+  y = centreY - height / 2;
+}
+
+const left = (x / pdfWidth) * rect.width;
+const top = ((pdfHeight - y - height) / pdfHeight) * rect.height;
+const boxWidth = (width / pdfWidth) * rect.width;
+const boxHeight = (height / pdfHeight) * rect.height;
 
     box.style.left = `${left}px`;
     box.style.top = `${top}px`;
@@ -1442,24 +3263,42 @@ function focusIssue(issueId) {
 
   showStatus("Issue highlighted on PDF preview.", "success");
 }
-    function addCorrectionFromPercent(correctionData) {
-      const pdfWidth = currentViewport.width / renderScale;
-      const pdfHeight = currentViewport.height / renderScale;
+   function addCorrectionFromPercent(correctionData) {
+  if (
+    typeof correctionData.x === "number" &&
+    typeof correctionData.y === "number"
+  ) {
+    addCorrection({
+      page: correctionData.page,
+      text: correctionData.text,
+      x: correctionData.x,
+      y: correctionData.y,
+      width: correctionData.width,
+      height: correctionData.height,
+      fontSize: correctionData.fontSize,
+      source: correctionData.source
+    });
 
-      const centreX = pdfWidth * correctionData.xPercent;
-      const centreY = pdfHeight * correctionData.yPercent;
+    return;
+  }
 
-      addCorrection({
-        page: correctionData.page,
-        text: correctionData.text,
-        x: centreX - correctionData.width / 2,
-        y: centreY - correctionData.height / 2,
-        width: correctionData.width,
-        height: correctionData.height,
-        fontSize: correctionData.fontSize,
-        source: correctionData.source
-      });
-    }
+  const pdfWidth = currentViewport.width / renderScale;
+  const pdfHeight = currentViewport.height / renderScale;
+
+  const centreX = pdfWidth * correctionData.xPercent;
+  const centreY = pdfHeight * correctionData.yPercent;
+
+  addCorrection({
+    page: correctionData.page,
+    text: correctionData.text,
+    x: centreX - correctionData.width / 2,
+    y: centreY - correctionData.height / 2,
+    width: correctionData.width,
+    height: correctionData.height,
+    fontSize: correctionData.fontSize,
+    source: correctionData.source
+  });
+}
 
     function addCorrection(correctionData) {
       const id = Date.now().toString() + "-" + Math.random().toString(16).slice(2);
@@ -1484,9 +3323,9 @@ return corrections.find(correction => correction.id === id);
     }
 
     function renderCorrectionPatches() {
-      document.querySelectorAll(".patch").forEach(el => el.remove());
+  document.querySelectorAll(".patch").forEach(el => el.remove());
 
-      if (!currentViewport) return;
+  if (!currentViewport) return;
 
       const rect = canvas.getBoundingClientRect();
       const pdfWidth = currentViewport.width / renderScale;
@@ -1673,20 +3512,22 @@ showStatus("Patch position updated.", "success");
 
       const pdfLibDoc = await PDFLib.PDFDocument.load(originalPdfBytes);
       const pages = pdfLibDoc.getPages();
-      const font = await pdfLibDoc.embedFont(PDFLib.StandardFonts.HelveticaBold);
+      const font = await pdfLibDoc.embedFont(PDFLib.StandardFonts.Helvetica);
 
       corrections.forEach(correction => {
         const page = pages[correction.page - 1];
 
         if (!page) return;
 
-        page.drawRectangle({
-          x: correction.x,
-          y: correction.y,
-          width: correction.width,
-          height: correction.height,
-          color: PDFLib.rgb(1, 1, 1)
-        });
+        const whiteoutInset = 1;
+
+page.drawRectangle({
+  x: correction.x + whiteoutInset,
+  y: correction.y + whiteoutInset,
+  width: correction.width - whiteoutInset * 2,
+  height: correction.height - whiteoutInset * 2,
+  color: PDFLib.rgb(1, 1, 1)
+});
 
         const lines = String(correction.text).split("\n");
         const lineHeight = correction.fontSize * 1.05;
@@ -1700,7 +3541,7 @@ showStatus("Patch position updated.", "success");
             (correction.height - totalTextHeight) / 2 +
             totalTextHeight -
             lineHeight * (index + 1) +
-            2;
+            4;
 
           page.drawText(line, {
             x: textX,
@@ -1843,16 +3684,22 @@ showStatus("Patch position updated.", "success");
         .trim();
     }
 
-    function showStatus(message, type) {
-      const status = document.getElementById("status");
-      status.textContent = message;
-      status.className = `status ${type}`;
+   function showStatus(message, type) {
+  const status = document.getElementById("status");
 
-      setTimeout(() => {
-        status.className = "status";
-        status.textContent = "";
-      }, 4500);
-    }
+  if (!status) {
+    console.warn("Status element missing:", message);
+    return;
+  }
+
+  status.textContent = message;
+  status.className = `status ${type}`;
+
+  setTimeout(() => {
+    status.className = "status";
+    status.textContent = "";
+  }, 4500);
+}
 
     function escapeHtml(text) {
       return String(text)
@@ -1862,6 +3709,487 @@ showStatus("Patch position updated.", "success");
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#039;");
     }
+    function setupAdminUnlock() {
+  const appTitle = document.getElementById("appTitle");
+
+  if (!appTitle) return;
+
+  appTitle.addEventListener("click", function() {
+    adminTapCount++;
+
+    clearTimeout(adminTapTimer);
+
+    adminTapTimer = setTimeout(() => {
+      adminTapCount = 0;
+    }, 1500);
+
+    if (adminTapCount >= 5) {
+      adminTapCount = 0;
+      unlockAdminPrompt();
+    }
+  });
+}
+
+function unlockAdminPrompt() {
+  const password = prompt("Enter admin password:");
+
+  if (password === "admin123") {
+    isAdminUnlocked = true;
+
+    const panel = document.getElementById("adminMappingPanel");
+    panel.classList.add("active");
+
+    showStatus("Admin mapping mode unlocked.", "success");
+    return;
+  }
+
+  if (password !== null) {
+    showStatus("Incorrect admin password.", "error");
+  }
+}
+
+function lockAdminMode() {
+  isAdminUnlocked = false;
+  mappingMode = false;
+  mappingGridVisible = false;
+  selectedMapBoxId = null;
+
+  document.getElementById("adminMappingPanel").classList.remove("active");
+  document.getElementById("mappingModeBtn").textContent = "Mapping Mode: OFF";
+  document.getElementById("gridBtn").textContent = "Grid: OFF";
+
+  renderMappingOverlay();
+  updateMappingReadout();
+
+  showStatus("Admin mapping mode locked.", "success");
+}
+
+function populateMappingFieldDropdown() {
+  const select = document.getElementById("mapFieldSelect");
+
+  if (!select) return;
+
+  select.innerHTML = LGSR_MAPPING_FIELDS
+    .map(field => `<option value="${field.id}">${escapeHtml(field.label)}</option>`)
+    .join("");
+}
+
+function toggleMappingMode() {
+  if (!isAdminUnlocked) return;
+
+  mappingMode = !mappingMode;
+
+  document.getElementById("mappingModeBtn").textContent =
+    mappingMode ? "Mapping Mode: ON" : "Mapping Mode: OFF";
+
+  showStatus(
+    mappingMode
+      ? "Mapping Mode enabled. Click the PDF to add a mapping box."
+      : "Mapping Mode disabled.",
+    mappingMode ? "success" : "warning"
+  );
+}
+
+function toggleMappingGrid() {
+  if (!isAdminUnlocked) return;
+
+  mappingGridVisible = !mappingGridVisible;
+
+  document.getElementById("gridBtn").textContent =
+    mappingGridVisible ? "Grid: ON" : "Grid: OFF";
+
+  renderMappingOverlay();
+}
+
+function addMappingBoxAtCentre() {
+  if (!pdfDoc || !currentViewport) {
+    showStatus("Upload a PDF first.", "error");
+    return;
+  }
+
+  const pdfWidth = currentViewport.width / renderScale;
+  const pdfHeight = currentViewport.height / renderScale;
+
+  const width = Number(document.getElementById("mapBoxWidth").value) || 40;
+  const height = Number(document.getElementById("mapBoxHeight").value) || 14;
+
+  addMappingBox({
+    page: currentPage,
+    x: pdfWidth / 2 - width / 2,
+    y: pdfHeight / 2 - height / 2,
+    width,
+    height
+  });
+
+  showStatus("Mapping box added to centre.", "success");
+}
+
+function addMappingBoxFromClick(event) {
+  if (!pdfDoc || !currentViewport) return;
+
+  const position = getPdfPositionFromClick(event);
+
+  if (!position) return;
+
+  const width = Number(document.getElementById("mapBoxWidth").value) || 40;
+  const height = Number(document.getElementById("mapBoxHeight").value) || 14;
+
+  addMappingBox({
+    page: currentPage,
+    x: position.pdfX - width / 2,
+    y: position.pdfY - height / 2,
+    width,
+    height
+  });
+
+  showStatus("Mapping box added. Drag or nudge it into position.", "success");
+}
+
+function addMappingBox(boxData) {
+  const fieldId = document.getElementById("mapFieldSelect").value;
+  const field = LGSR_MAPPING_FIELDS.find(item => item.id === fieldId);
+
+  const id = Date.now().toString() + "-" + Math.random().toString(16).slice(2);
+
+  const existingIndex = fieldMapBoxes.findIndex(box => box.fieldId === fieldId);
+
+  const newBox = {
+    id,
+    fieldId,
+    label: field ? field.label : fieldId,
+    page: boxData.page,
+    x: roundCoord(boxData.x),
+    y: roundCoord(boxData.y),
+    width: roundCoord(boxData.width),
+    height: roundCoord(boxData.height)
+  };
+
+  if (existingIndex >= 0) {
+    fieldMapBoxes[existingIndex] = newBox;
+  } else {
+    fieldMapBoxes.push(newBox);
+  }
+
+  selectedMapBoxId = id;
+
+  renderMappingOverlay();
+  updateMappingReadout();
+}
+
+function renderMappingOverlay() {
+  document.querySelectorAll(".map-box").forEach(el => el.remove());
+  document.querySelectorAll(".mapping-grid-line").forEach(el => el.remove());
+
+  if (!currentViewport || !pdfDoc || !isAdminUnlocked) return;
+
+  if (mappingGridVisible) {
+    renderMappingGrid();
+  }
+
+  renderMapBoxes();
+}
+
+function renderMappingGrid() {
+  const rect = canvas.getBoundingClientRect();
+  const spacing = 50;
+
+  for (let x = spacing; x < rect.width; x += spacing) {
+    const line = document.createElement("div");
+    line.className = "mapping-grid-line vertical";
+    line.style.left = `${x}px`;
+    pageWrap.appendChild(line);
+  }
+
+  for (let y = spacing; y < rect.height; y += spacing) {
+    const line = document.createElement("div");
+    line.className = "mapping-grid-line horizontal";
+    line.style.top = `${y}px`;
+    pageWrap.appendChild(line);
+  }
+}
+
+function renderMapBoxes() {
+  const rect = canvas.getBoundingClientRect();
+  const pdfWidth = currentViewport.width / renderScale;
+  const pdfHeight = currentViewport.height / renderScale;
+
+  fieldMapBoxes
+    .filter(box => box.page === currentPage)
+    .forEach(box => {
+      const el = document.createElement("div");
+      el.className = "map-box";
+
+      if (box.id === selectedMapBoxId) {
+        el.classList.add("selected");
+      }
+
+      el.dataset.id = box.id;
+
+      const left = (box.x / pdfWidth) * rect.width;
+      const top = ((pdfHeight - box.y - box.height) / pdfHeight) * rect.height;
+      const width = (box.width / pdfWidth) * rect.width;
+      const height = (box.height / pdfHeight) * rect.height;
+
+      el.style.left = `${left}px`;
+      el.style.top = `${top}px`;
+      el.style.width = `${width}px`;
+      el.style.height = `${height}px`;
+
+      const label = document.createElement("div");
+      label.className = "map-box-label";
+      label.textContent = box.label;
+
+      el.appendChild(label);
+
+      el.addEventListener("click", function(event) {
+        event.preventDefault();
+        event.stopPropagation();
+        selectMappingBox(box.id);
+      });
+
+      el.addEventListener("pointerdown", startDragMapBox);
+
+      pageWrap.appendChild(el);
+    });
+}
+
+function selectMappingBox(id) {
+  selectedMapBoxId = id;
+
+  const box = getSelectedMappingBox(false);
+
+  if (box) {
+    document.getElementById("mapFieldSelect").value = box.fieldId;
+    document.getElementById("mapBoxWidth").value = Math.round(box.width);
+    document.getElementById("mapBoxHeight").value = Math.round(box.height);
+  }
+
+  renderMappingOverlay();
+  updateMappingReadout();
+}
+
+function startDragMapBox(event) {
+  event.preventDefault();
+  event.stopPropagation();
+
+  const boxId = event.currentTarget.dataset.id;
+  const box = fieldMapBoxes.find(item => item.id === boxId);
+
+  if (!box) return;
+
+  selectedMapBoxId = boxId;
+  draggingMapBox = box;
+
+  mapDragStartClientX = event.clientX;
+  mapDragStartClientY = event.clientY;
+  mapDragStartPdfX = box.x;
+  mapDragStartPdfY = box.y;
+
+  mapTouchLiftPixels = event.pointerType === "touch" ? 60 : 0;
+
+  event.currentTarget.setPointerCapture(event.pointerId);
+
+  document.addEventListener("pointermove", dragMapBox);
+  document.addEventListener("pointerup", stopDragMapBox);
+
+  updateMappingReadout();
+}
+
+function dragMapBox(event) {
+  if (!draggingMapBox || !currentViewport) return;
+
+  event.preventDefault();
+
+  const rect = canvas.getBoundingClientRect();
+  const pdfWidth = currentViewport.width / renderScale;
+  const pdfHeight = currentViewport.height / renderScale;
+
+  const deltaX = event.clientX - mapDragStartClientX;
+  const deltaY = event.clientY - mapDragStartClientY;
+
+  const pdfDeltaX = (deltaX / rect.width) * pdfWidth;
+  const pdfDeltaY = (deltaY / rect.height) * pdfHeight;
+  const touchLiftPdfY = (mapTouchLiftPixels / rect.height) * pdfHeight;
+
+  draggingMapBox.x = roundCoord(mapDragStartPdfX + pdfDeltaX);
+  draggingMapBox.y = roundCoord(mapDragStartPdfY - pdfDeltaY + touchLiftPdfY);
+
+  renderMappingOverlay();
+  updateMappingReadout();
+}
+
+function stopDragMapBox() {
+  draggingMapBox = null;
+  mapTouchLiftPixels = 0;
+
+  document.removeEventListener("pointermove", dragMapBox);
+  document.removeEventListener("pointerup", stopDragMapBox);
+
+  renderMappingOverlay();
+  updateMappingReadout();
+
+  showStatus("Mapping box position updated.", "success");
+}
+
+function getSelectedMappingBox(showWarning = true) {
+  if (!selectedMapBoxId) {
+    if (showWarning) showStatus("Select a mapping box first.", "warning");
+    return null;
+  }
+
+  const box = fieldMapBoxes.find(item => item.id === selectedMapBoxId);
+
+  if (!box) {
+    if (showWarning) showStatus("Selected mapping box could not be found.", "error");
+    return null;
+  }
+
+  return box;
+}
+
+function nudgeSelectedMappingBox(dx, dy) {
+  const box = getSelectedMappingBox();
+  if (!box) return;
+
+  box.x = roundCoord(box.x + dx);
+  box.y = roundCoord(box.y + dy);
+
+  renderMappingOverlay();
+  updateMappingReadout();
+}
+
+function resizeSelectedMappingBox(dw, dh) {
+  const box = getSelectedMappingBox();
+  if (!box) return;
+
+  box.width = roundCoord(Math.max(5, box.width + dw));
+  box.height = roundCoord(Math.max(5, box.height + dh));
+
+  document.getElementById("mapBoxWidth").value = Math.round(box.width);
+  document.getElementById("mapBoxHeight").value = Math.round(box.height);
+
+  renderMappingOverlay();
+  updateMappingReadout();
+}
+
+function deleteSelectedMappingBox() {
+  const box = getSelectedMappingBox();
+  if (!box) return;
+
+  fieldMapBoxes = fieldMapBoxes.filter(item => item.id !== selectedMapBoxId);
+  selectedMapBoxId = null;
+
+  renderMappingOverlay();
+  updateMappingReadout();
+
+  showStatus("Selected mapping box deleted.", "success");
+}
+
+function updateMappingReadout() {
+  const readout = document.getElementById("mappingCoordReadout");
+
+  if (!readout) return;
+
+  const box = getSelectedMappingBox(false);
+
+  if (!box) {
+    readout.textContent = "No mapping box selected.";
+    return;
+  }
+
+  readout.textContent =
+    `Field: ${box.label}\n` +
+    `ID: ${box.fieldId}\n` +
+    `Page: ${box.page}\n` +
+    `x: ${box.x}\n` +
+    `y: ${box.y}\n` +
+    `width: ${box.width}\n` +
+    `height: ${box.height}`;
+}
+
+function buildFieldMapObject() {
+  const map = {};
+
+  const yesExpectedFields = [
+    "gasTightnessTestSatisfactory",
+    "pipeworkVisualInspectionSatisfactory",
+    "equipotentialBonding",
+    "coAlarmFittedAndWorking",
+    "gasMeterPresent",
+    "emergencyControlValveAvailable",
+    "installationPass",
+    "smokeAlarmFittedAndWorking"
+  ];
+
+  fieldMapBoxes.forEach(box => {
+    const mapEntry = {
+      label: box.label
+    };
+
+    if (yesExpectedFields.includes(box.fieldId)) {
+      mapEntry.expected = "YES";
+      mapEntry.correctionText = "YES";
+    }
+
+    mapEntry.page = box.page;
+    mapEntry.x = box.x;
+    mapEntry.y = box.y;
+    mapEntry.width = box.width;
+    mapEntry.height = box.height;
+
+    map[box.fieldId] = mapEntry;
+  });
+
+  return map;
+}
+
+function exportFieldMap() {
+  const output = document.getElementById("fieldMapOutput");
+
+  const mapObject = buildFieldMapObject();
+
+  const text =
+    "const LGSR_FIELD_MAP = " +
+    JSON.stringify(mapObject, null, 2) +
+    ";";
+
+  output.value = text;
+
+  showStatus("Field map exported.", "success");
+}
+
+async function copyFieldMapToClipboard() {
+  exportFieldMap();
+
+  const output = document.getElementById("fieldMapOutput");
+
+  try {
+    await navigator.clipboard.writeText(output.value);
+    showStatus("Field map copied to clipboard.", "success");
+  } catch (error) {
+    output.select();
+    document.execCommand("copy");
+    showStatus("Field map selected/copied. If needed, copy it manually.", "warning");
+  }
+}
+
+function clearFieldMap() {
+  if (!confirm("Clear all mapping boxes?")) return;
+
+  fieldMapBoxes = [];
+  selectedMapBoxId = null;
+
+  renderMappingOverlay();
+  updateMappingReadout();
+
+  document.getElementById("fieldMapOutput").value = "";
+
+  showStatus("Field map cleared.", "success");
+}
+
+function roundCoord(value) {
+  return Math.round(Number(value) * 100) / 100;
+}
   </script>
 </body>
 </html>
