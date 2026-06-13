@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 
-  <title>TM LGSR Checker & Corrector</title>function checkApplianceInspectionFields
+  <title>TM LGSR Checker & Corrector</title>
 
   <link rel="manifest" href="manifest.json">
 <link rel="icon" href="favicon.ico">
@@ -303,11 +303,11 @@ textarea {
     }
 
     .issue {
-      border-radius: 10px;
-      padding: 10px;
-      font-size: 0.92rem;
-      line-height: 1.35;
-    }
+  border-radius: 8px;
+  padding: 8px;
+  font-size: 0.88rem;
+  line-height: 1.25;
+}
 
     .issue.fail {
       background: #ffebee;
@@ -334,21 +334,48 @@ textarea {
     }
 
     .issue-title {
-      font-weight: bold;
-      margin-bottom: 5px;
-    }
+  font-weight: bold;
+  margin-bottom: 4px;
+}
 
     .issue-actions {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-      margin-top: 8px;
-    }
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
 
-    .issue-actions button {
-      padding: 8px 10px;
-      font-size: 0.88rem;
-    }
+.issue-actions button {
+  padding: 6px 8px;
+  font-size: 0.82rem;
+  min-height: 36px;
+}
+.review-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: #fff3e0;
+  color: #7a3d00;
+  border: 1px solid #ffcc80;
+  font-size: 0.82rem;
+  font-weight: bold;
+}
+.issue-values {
+  margin-top: 4px;
+  font-size: 0.84rem;
+}
+
+.issue-details {
+  margin-top: 5px;
+  font-size: 0.82rem;
+}
+
+.issue-details summary {
+  cursor: pointer;
+  font-weight: bold;
+}
 
     .small-text {
       font-size: 0.85rem;
@@ -579,9 +606,9 @@ button {
 
 <body>
   <div class="container">
-    <h1 id="appTitle" title="TM LGSR Checker & Corrector">TM LGSR Checker & Corrector</h1>
+    <h1 id="appTitle" title="TM LGSR Checker & Corrector">LGSR Checker & Corrector</h1>
     <p class="subtitle">
-      Upload the TM LGSR PDF, check for likely mistakes, add clean correction patches, then save a corrected copy.
+      Upload the LGSR PDF, check for likely mistakes, add clean correction patches, then save a corrected copy.
     </p>
 
     <div class="top-actions">
@@ -702,30 +729,40 @@ button {
         </div>
       </div>
 
-      <div class="side-card">
-        <h2>Detected Issues</h2>
+   <div class="side-card">
+  <h2>Detected Issues</h2>
 
-        <div class="quick-help">
-          New patch mode covers the old value with a clean white rectangle and centres the replacement text inside it.
-          Click the PDF to place a patch, then drag or nudge it into position.
-        </div>
+  <div class="quick-help">
+    New patch mode covers the old value with a clean white rectangle and centres the replacement text inside it.
+    Click the PDF to place a patch, then drag or nudge it into position.
+  </div>
 
-        <div id="issues" class="issues">
-          <div class="issue warn">Upload a PDF and press “Check PDF”.</div>
-        </div>
+  <div class="issue-actions" style="margin-bottom: 10px;">
+    <button id="applyAllPatchesBtn" class="green-btn" onclick="applyAllSuggestedFixes()" style="display: none;">
+      Apply all suggested patches
+    </button>
+  </div>
 
-        <h2>Correction Patches</h2>
-        <p class="small-text">
-          Select a patch from the list or by clicking it on the PDF. Use the adjustment buttons for fine control.
-        </p>
+  <div id="issues" class="issues">
+    <div class="issue warn">Upload a PDF and press “Check PDF”.</div>
+  </div>
 
-        <div id="correctionList" class="correction-list"></div>
+  <h2>Correction Patches</h2>
+  <p class="small-text">
+    Select a patch from the list or by clicking it on the PDF. Use the adjustment buttons for fine control.
+  </p>
 
-        <div id="extractedTextSection" style="display: none;">
-  <h2>Extracted Text</h2>
-  <div id="textPreview" class="text-preview">No text extracted yet.</div>
+  <button class="danger-btn" onclick="resetAllPatches()" style="margin-bottom: 10px; width: 100%;">
+    Reset patches
+  </button>
+
+  <div id="correctionList" class="correction-list"></div>
+
+  <div id="extractedTextSection" style="display: none;">
+    <h2>Extracted Text</h2>
+    <div id="textPreview" class="text-preview">No text extracted yet.</div>
+  </div>
 </div>
-      </div>
     </div>
   </div>
 
@@ -984,7 +1021,14 @@ flueType: {
   width: 25,
   height: 15
 },
-  analyserLowRatio: {
+
+operatingPressure: {
+  x: 363,
+  width: 30,
+  height: 15
+},
+
+analyserLowRatio: {
     x: 401,
     width: 30,
     height: 15
@@ -1351,6 +1395,7 @@ function makeApplianceDynamicBoxFromToken(token, columnKey) {
   }
 
 const yOffsetByColumn = {
+  operatingPressure: -8,
   flueType: -8,
   analyserLowRatio: -8,
   analyserHighRatio: -8,
@@ -1388,6 +1433,7 @@ visualInspectionOnly: -8
   }
 
   const yOffsetByColumn = {
+    operatingPressure: -8,
     flueType: -8,
   analyserLowRatio: -8,
   analyserHighRatio: -8,
@@ -1423,6 +1469,7 @@ function getTokenFromDynamicCell(rowAnchorToken, columnKey) {
   const pageTokens = extractedTextTokensByPage[1] || [];
 
  const yOffsetByColumn = {
+   operatingPressure: -8,
    flueType: -8,
   analyserLowRatio: -8,
   analyserHighRatio: -8,
@@ -1826,6 +1873,129 @@ const inactiveRsAppliance =
 */
 if (inactiveRsAppliance) {
   return;
+}
+
+const heatInputValue = normaliseMappedValue(row.operatingPressure);
+const heatInputBox = row.operatingPressureBox;
+
+if (flueType === "FL" && !isZeroValue(row.operatingPressure)) {
+  detectedIssues.push({
+    id: `appliance-${rowLabel}-heat-input-fl-not-zero`,
+    type: "fail",
+    title: "Heat input / operating pressure should be 0 for FL appliance",
+    message:
+      `Appliance row ${rowLabel} (${row.applianceType}) is marked as FL, but Heat Input / Operating Pressure is marked ${row.operatingPressure || "blank"}. FL appliances should have this box marked 0.`,
+    currentValue: row.operatingPressure || "Blank",
+    suggestedValue: "0",
+    fixLabel: heatInputBox ? "Apply 0 patch" : "",
+    highlight: heatInputBox
+      ? {
+          page: heatInputBox.page,
+          x: heatInputBox.x,
+          y: heatInputBox.y,
+          width: heatInputBox.width,
+          height: heatInputBox.height,
+          label: `Issue ${detectedIssues.length + 1}`
+        }
+      : {
+          page: 1,
+          xPercent: 0.43,
+          yPercent: getApproxApplianceRowY(String(rowNumber)),
+          width: 0.05,
+          height: 0.04,
+          label: `Issue ${detectedIssues.length + 1}`
+        },
+    correction: heatInputBox
+      ? {
+          page: heatInputBox.page,
+          text: "0",
+          x: heatInputBox.x,
+          y: heatInputBox.y,
+          width: heatInputBox.width,
+          height: heatInputBox.height,
+          fontSize: 7,
+          source: `Auto patch: Heat input / operating pressure row ${rowLabel}`
+        }
+      : null
+  });
+}
+
+if (ignoredAppliance && heatInputValue !== "NA") {
+  detectedIssues.push({
+    id: `appliance-${rowLabel}-heat-input-ignored-appliance-not-na`,
+    type: "fail",
+    title: "Heat input / operating pressure should be N/A",
+    message:
+      `Appliance row ${rowLabel} (${row.applianceType}) should have Heat Input / Operating Pressure marked N/A.`,
+    currentValue: row.operatingPressure || "Blank",
+    suggestedValue: "N/A",
+    fixLabel: heatInputBox ? "Apply N/A patch" : "",
+    highlight: heatInputBox
+      ? {
+          page: heatInputBox.page,
+          x: heatInputBox.x,
+          y: heatInputBox.y,
+          width: heatInputBox.width,
+          height: heatInputBox.height,
+          label: `Issue ${detectedIssues.length + 1}`
+        }
+      : {
+          page: 1,
+          xPercent: 0.43,
+          yPercent: getApproxApplianceRowY(String(rowNumber)),
+          width: 0.05,
+          height: 0.04,
+          label: `Issue ${detectedIssues.length + 1}`
+        },
+    correction: heatInputBox
+      ? {
+          page: heatInputBox.page,
+          text: "N/A",
+          x: heatInputBox.x,
+          y: heatInputBox.y,
+          width: heatInputBox.width,
+          height: heatInputBox.height,
+          fontSize: 7,
+          source: `Auto patch: Heat input / operating pressure row ${rowLabel}`
+        }
+      : null
+  });
+}
+
+if (
+  !ignoredAppliance &&
+  (flueType === "RS" || flueType === "OF") &&
+  landlordOwned &&
+  !isValidDomesticHeatInputValue(row.operatingPressure)
+) {
+  detectedIssues.push({
+    id: `appliance-${rowLabel}-heat-input-review-required`,
+    type: "fail",
+    title: "Heat input / operating pressure needs review",
+    message:
+      `Appliance row ${rowLabel} (${row.applianceType}) has Heat Input / Operating Pressure marked ${row.operatingPressure || "blank"}. For an active domestic RS/OF landlord appliance, this should usually be a valid number above 0 and no more than 75.`,
+    currentValue: row.operatingPressure || "Blank",
+    suggestedValue: "Review heat input / operating pressure",
+    fixLabel: "",
+    highlight: heatInputBox
+      ? {
+          page: heatInputBox.page,
+          x: heatInputBox.x,
+          y: heatInputBox.y,
+          width: heatInputBox.width,
+          height: heatInputBox.height,
+          label: `Issue ${detectedIssues.length + 1}`
+        }
+      : {
+          page: 1,
+          xPercent: 0.43,
+          yPercent: getApproxApplianceRowY(String(rowNumber)),
+          width: 0.05,
+          height: 0.04,
+          label: `Issue ${detectedIssues.length + 1}`
+        },
+    correction: null
+  });
 }
 
 const fieldsToCheck = [];
@@ -2268,7 +2438,8 @@ function getParsedApplianceRows() {
       return;
     }
 
-    const analyserLowRatioBox = makeApplianceDynamicBoxFromRowAnchor(token, "analyserLowRatio");
+   const operatingPressureBox = makeApplianceDynamicBoxFromRowAnchor(token, "operatingPressure");
+const analyserLowRatioBox = makeApplianceDynamicBoxFromRowAnchor(token, "analyserLowRatio");
 const analyserHighRatioBox = makeApplianceDynamicBoxFromRowAnchor(token, "analyserHighRatio");
 const safetyDeviceCorrectBox = makeApplianceDynamicBoxFromRowAnchor(token, "safetyDeviceCorrect");
 const ventilationSatisfactoryBox = makeApplianceDynamicBoxFromRowAnchor(token, "ventilationSatisfactory");
@@ -2293,7 +2464,7 @@ flueTypeBox,
   coLow: getTokenText(coLowToken),
   coHigh: getTokenText(coHighToken),
 
-  operatingPressure: getTokenText(operatingPressureToken),
+  operatingPressure: getTextFromBox(operatingPressureBox) || getTokenText(operatingPressureToken),
 
   analyserLowRatio: getTextFromBox(analyserLowRatioBox) || getTokenText(analyserLowRatioToken),
   analyserHighRatio: getTextFromBox(analyserHighRatioBox) || getTokenText(analyserHighRatioToken),
@@ -2313,7 +2484,8 @@ visualInspectionOnly: getTextFromBox(visualInspectionOnlyBox),
   coLowBox: makePatchBoxFromToken(coLowToken),
   coHighBox: makePatchBoxFromToken(coHighToken),
 
-  analyserLowRatioBox,
+operatingPressureBox,
+analyserLowRatioBox,
   analyserHighRatioBox,
   safetyDeviceCorrectBox,
   ventilationSatisfactoryBox,
@@ -2446,16 +2618,45 @@ function hasInactiveRsGasAppliance() {
 
   return inactiveRsRows.length > 0;
 }
+    function isValidDomesticHeatInputValue(value) {
+  const raw = String(value || "").trim();
+
+  if (!raw) return false;
+
+  const normalised = normaliseMappedValue(raw);
+
+  if (!normalised || normalised === "NA") {
+    return false;
+  }
+
+  if (!/^\d{1,2}(\.\d{1,2})?$/.test(raw)) {
+    return false;
+  }
+
+  const numericValue = Number(raw);
+
+  return numericValue > 0 && numericValue <= 75;
+}
+
+function isZeroValue(value) {
+  const raw = String(value || "").trim();
+
+  if (!raw) return false;
+
+  const numericValue = Number(raw.replace(/[^\d.-]/g, ""));
+
+  return Number.isFinite(numericValue) && numericValue === 0;
+}
 function hasTechnicalGasReadings(row) {
-  const technicalValues = [
-    row.co2ReadingLow,
-    row.co2ReadingHigh,
-    row.coReadingLow,
-    row.coReadingHigh,
-    row.operatingPressure,
-    row.analyserLowRatio,
-    row.analyserHighRatio
-  ];
+ const technicalValues = [
+  row.co2Low,
+  row.co2High,
+  row.coLow,
+  row.coHigh,
+  row.operatingPressure,
+  row.analyserLowRatio,
+  row.analyserHighRatio
+];
 
   return technicalValues.some(value => {
     const normalised = normaliseMappedValue(value);
@@ -3077,12 +3278,39 @@ function getApproxApplianceRowY(rowNumber) {
         });
       }
     }
+function updateApplyAllPatchesButton() {
+  const button = document.getElementById("applyAllPatchesBtn");
 
-  function renderIssues(issues) {
+  if (!button) return;
+
+  const hasPatchableIssues = detectedIssues.some(issue => {
+    if (resolvedIssueIds.includes(issue.id)) return false;
+    if (!issue.correction) return false;
+
+    const alreadyAdded = corrections.some(
+      correction => correction.source === issue.correction.source
+    );
+
+    return !alreadyAdded;
+  });
+
+  button.style.display = hasPatchableIssues ? "inline-flex" : "none";
+}
+    function scrollFirstIssueCardIntoView() {
+  const firstIssueCard = document.querySelector("#issues .issue:not(.pass)");
+
+  if (!firstIssueCard) return;
+
+  firstIssueCard.scrollIntoView({
+    behavior: "smooth",
+    block: "nearest"
+  });
+}
+ function renderIssues(issues) {
   const issuesBox = document.getElementById("issues");
 
   const unresolvedIssues = issues.filter(issue => !resolvedIssueIds.includes(issue.id));
-
+updateApplyAllPatchesButton();
   if (issues.length === 0) {
     issuesBox.innerHTML = `<div class="issue pass">✅ No obvious TM LGSR issues detected.</div>`;
     return;
@@ -3093,33 +3321,42 @@ function getApproxApplianceRowY(rowNumber) {
     return;
   }
 
- issuesBox.innerHTML = unresolvedIssues.map((issue, index) => {
-  const icon = issue.type === "fail" ? "❌" : issue.type === "warn" ? "⚠️" : "ℹ️";
-  const issueLabel =
-    issue.highlight?.label ||
-    `Issue ${issues.findIndex(item => item.id === issue.id) + 1}`;
+  issuesBox.innerHTML = unresolvedIssues.map(issue => {
+    const icon = issue.type === "fail" ? "❌" : issue.type === "warn" ? "⚠️" : "ℹ️";
+    const issueLabel =
+      issue.highlight?.label ||
+      `Issue ${issues.findIndex(item => item.id === issue.id) + 1}`;
 
-    const actionButtons = `
-      ${issue.highlight ? `<button class="blue-btn" onclick="focusIssue('${issue.id}')">Show on PDF</button>` : ""}
-      ${issue.correction ? `<button class="green-btn" onclick="applySuggestedFix('${issue.id}')">${escapeHtml(issue.fixLabel)}</button>` : ""}
-    `;
+    const shortFixLabel = issue.fixLabel
+      ? issue.fixLabel.replace("Apply ", "Apply ").replace(" patch", "")
+      : "";
+
+  const actionButtons = issue.correction
+  ? `<button class="green-btn" onclick="applySuggestedFix('${issue.id}')">${escapeHtml(shortFixLabel)}</button>`
+  : `<span class="review-badge">Review required</span>`;
 
     return `
       <div class="issue ${issue.type}">
         <div class="issue-title">${icon} ${escapeHtml(issueLabel)}: ${escapeHtml(issue.title)}</div>
-        <div>${escapeHtml(issue.message)}</div>
+
         ${
           issue.currentValue || issue.suggestedValue
-            ? `<div style="margin-top:6px;">
-                Current: <strong>${escapeHtml(issue.currentValue || "-")}</strong>
-                &nbsp; → &nbsp;
-                Suggested: <strong>${escapeHtml(issue.suggestedValue || "-")}</strong>
-              </div>`
+            ? `<div class="issue-values">
+    Current: <strong>${escapeHtml(issue.currentValue || "-")}</strong>
+    &nbsp; → &nbsp;
+    Suggested: <strong>${escapeHtml(issue.suggestedValue || "-")}</strong>
+  </div>`
             : ""
         }
+
         <div class="issue-actions">
           ${actionButtons}
         </div>
+
+        <details class="issue-details">
+          <summary>Details</summary>
+          <div>${escapeHtml(issue.message)}</div>
+        </details>
       </div>
     `;
   }).join("");
@@ -3184,6 +3421,44 @@ const boxHeight = (height / pdfHeight) * rect.height;
     pageWrap.appendChild(box);
   });
 }
+    function applyAllSuggestedFixes() {
+  const patchableIssues = detectedIssues.filter(issue => {
+    if (resolvedIssueIds.includes(issue.id)) return false;
+    if (!issue.correction) return false;
+
+    const alreadyAdded = corrections.some(
+      correction => correction.source === issue.correction.source
+    );
+
+    return !alreadyAdded;
+  });
+
+  if (patchableIssues.length === 0) {
+    showStatus("No suggested patches are available to apply.", "warning");
+    return;
+  }
+
+  patchableIssues.forEach(issue => {
+    addCorrectionFromPercent(issue.correction);
+    markIssueResolved(issue.id);
+  });
+
+  const lastIssue = patchableIssues[patchableIssues.length - 1];
+
+  if (lastIssue?.correction?.page) {
+    currentPage = lastIssue.correction.page;
+  }
+
+ renderPage();
+renderIssues(detectedIssues);
+
+setTimeout(scrollFirstIssueCardIntoView, 100);
+
+showStatus(
+  `${patchableIssues.length} suggested patch(es) applied.`,
+  "success"
+);
+}
     function applySuggestedFix(issueId) {
       const issue = detectedIssues.find(item => item.id === issueId);
 
@@ -3206,6 +3481,8 @@ markIssueResolved(issue.id);
 currentPage = issue.correction.page;
 renderPage();
 renderIssues(detectedIssues);
+
+setTimeout(scrollFirstIssueCardIntoView, 100);
 
 showStatus("Suggested patch added and issue marked as corrected.", "success");
     }
@@ -3606,7 +3883,24 @@ page.drawRectangle({
 
       updateCorrectionList();
     }
+function resetAllPatches() {
+  if (corrections.length === 0 && resolvedIssueIds.length === 0) {
+    showStatus("There are no patches to reset.", "warning");
+    return;
+  }
 
+  corrections = [];
+  resolvedIssueIds = [];
+  selectedCorrectionId = null;
+  activeIssueHighlightId = null;
+
+  renderCorrectionPatches();
+  updateCorrectionList();
+  renderIssueHighlights();
+  renderIssues(detectedIssues);
+
+  showStatus("All patches have been reset.", "success");
+}
     function deleteSelectedCorrection() {
       if (!selectedCorrectionId) {
         showStatus("Select a patch first.", "warning");
