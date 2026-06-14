@@ -1015,6 +1015,12 @@ const LGSR_FIELD_MAP = {
 };
 const APPLIANCE_DYNAMIC_COLUMN_BOXES = {
   page: 1,
+
+model: {
+  x: 169,
+  width: 45,
+  height: 15
+},
   
 flueType: {
   x: 332,
@@ -1059,8 +1065,8 @@ visualConditionOfFlue: {
 },
 
 flueFlowCheck: {
-    x: 575,
-    width: 34,
+    x: 584,
+    width: 30,
     height: 15
   },
 
@@ -1395,6 +1401,7 @@ function makeApplianceDynamicBoxFromToken(token, columnKey) {
   }
 
 const yOffsetByColumn = {
+  model: -8,
   operatingPressure: -8,
   flueType: -8,
   analyserLowRatio: -8,
@@ -1433,6 +1440,7 @@ visualInspectionOnly: -8
   }
 
   const yOffsetByColumn = {
+    model: -8,
     operatingPressure: -8,
     flueType: -8,
   analyserLowRatio: -8,
@@ -1469,6 +1477,7 @@ function getTokenFromDynamicCell(rowAnchorToken, columnKey) {
   const pageTokens = extractedTextTokensByPage[1] || [];
 
  const yOffsetByColumn = {
+   model: -8,
    operatingPressure: -8,
    flueType: -8,
   analyserLowRatio: -8,
@@ -1811,6 +1820,101 @@ function checkApplianceInspectionFields() {
    const flueType = normaliseMappedValue(row.flueType);
 const landlordApplianceValue = normaliseMappedValue(row.landlordsAppliance);
 const landlordOwned = landlordApplianceValue === "YES";
+    const rsOrOfLandlordApplianceMarkedNo =
+  !ignoredAppliance &&
+  (flueType === "RS" || flueType === "OF") &&
+  landlordApplianceValue === "NO";
+
+if (rsOrOfLandlordApplianceMarkedNo) {
+  const issueBox = row.landlordsApplianceBox;
+
+  detectedIssues.push({
+    id: `appliance-${rowLabel}-rs-of-landlords-appliance-not-yes`,
+    type: "fail",
+    title: "Landlords appliance should be YES",
+    message:
+      `Appliance row ${rowLabel} (${row.applianceType}) is marked as ${flueType}, but Landlords appliance is marked NO. RS/OF appliances should be recorded as landlord appliances.`,
+    currentValue: row.landlordsAppliance,
+    suggestedValue: "YES",
+    fixLabel: issueBox ? "Apply YES patch" : "",
+    highlight: issueBox
+      ? {
+          page: issueBox.page,
+          x: issueBox.x,
+          y: issueBox.y,
+          width: issueBox.width,
+          height: issueBox.height,
+          label: `Issue ${detectedIssues.length + 1}`
+        }
+      : {
+          page: 1,
+          xPercent: 0.72,
+          yPercent: getApproxApplianceRowY(String(rowNumber)),
+          width: 0.06,
+          height: 0.04,
+          label: `Issue ${detectedIssues.length + 1}`
+        },
+    correction: issueBox
+      ? {
+          page: issueBox.page,
+          text: "YES",
+          x: issueBox.x,
+          y: issueBox.y,
+          width: issueBox.width,
+          height: issueBox.height,
+          fontSize: 7,
+          source: `Auto patch: Landlords appliance row ${rowLabel}`
+        }
+      : null
+  });
+
+  return;
+}
+    const modelValue = normaliseMappedValue(row.model);
+    console.log("Model check:", {
+  row: rowLabel,
+  applianceType: row.applianceType,
+  flueType,
+  model: row.model,
+  modelValue
+});
+
+if (
+  !ignoredAppliance &&
+  (flueType === "RS" || flueType === "OF") &&
+  (!modelValue || modelValue === "UNKNOWN")
+) {
+  const issueBox = row.modelBox;
+
+  detectedIssues.push({
+    id: `appliance-${rowLabel}-model-unknown`,
+    type: "fail",
+    title: "No boiler model recorded",
+    message:
+      `Appliance row ${rowLabel} (${row.applianceType}) has no boiler model recorded. If the correct model is not available in the list, please write the full model in Engineers Report.`,
+    currentValue: row.model || "Unknown",
+    suggestedValue: "Review boiler model",
+    fixLabel: "",
+    highlight: issueBox
+      ? {
+          page: issueBox.page,
+          x: issueBox.x,
+          y: issueBox.y,
+          width: issueBox.width,
+          height: issueBox.height,
+          label: `Issue ${detectedIssues.length + 1}`
+        }
+      : {
+          page: 1,
+          xPercent: 0.28,
+          yPercent: getApproxApplianceRowY(String(rowNumber)),
+          width: 0.09,
+          height: 0.04,
+          label: `Issue ${detectedIssues.length + 1}`
+        },
+    correction: null
+  });
+}
 const flFlueWithTechnicalReadings =
   !ignoredAppliance &&
   flueType === "FL" &&
@@ -1873,6 +1977,45 @@ const inactiveRsAppliance =
 */
 if (inactiveRsAppliance) {
   return;
+}
+
+const highRatioValue = normaliseMappedValue(row.analyserHighRatio);
+
+if (
+  !ignoredAppliance &&
+  flueType === "RS" &&
+  (!highRatioValue || highRatioValue === "NA" || isZeroValue(row.analyserHighRatio))
+) {
+  const issueBox = row.analyserHighRatioBox;
+
+  detectedIssues.push({
+    id: `appliance-${rowLabel}-rs-high-ratio-missing`,
+    type: "fail",
+    title: "No combustion reading detected",
+    message:
+      "No combustion reading detected - condensing appliances should have combustion performance tested/recorded.",
+    currentValue: row.analyserHighRatio || "Blank",
+    suggestedValue: "Review combustion readings",
+    fixLabel: "",
+    highlight: issueBox
+      ? {
+          page: issueBox.page,
+          x: issueBox.x,
+          y: issueBox.y,
+          width: issueBox.width,
+          height: issueBox.height,
+          label: `Issue ${detectedIssues.length + 1}`
+        }
+      : {
+          page: 1,
+          xPercent: 0.52,
+          yPercent: getApproxApplianceRowY(String(rowNumber)),
+          width: 0.05,
+          height: 0.04,
+          label: `Issue ${detectedIssues.length + 1}`
+        },
+    correction: null
+  });
 }
 
 const heatInputValue = normaliseMappedValue(row.operatingPressure);
@@ -2402,10 +2545,12 @@ function getParsedApplianceRows() {
 
     if (!["RS", "FL", "OF"].includes(flueType)) return;
 
-    const co2LowToken = pageOneTokens[index - 4];
-    const co2HighToken = pageOneTokens[index - 3];
-    const coLowToken = pageOneTokens[index - 2];
-    const coHighToken = pageOneTokens[index - 1];
+    const modelToken = pageOneTokens[index - 5];
+
+const co2LowToken = pageOneTokens[index - 4];
+const co2HighToken = pageOneTokens[index - 3];
+const coLowToken = pageOneTokens[index - 2];
+const coHighToken = pageOneTokens[index - 1];
 
     const operatingPressureToken = pageOneTokens[index + 1];
     const analyserLowRatioToken = pageOneTokens[index + 2];
@@ -2439,6 +2584,7 @@ function getParsedApplianceRows() {
     }
 
    const operatingPressureBox = makeApplianceDynamicBoxFromRowAnchor(token, "operatingPressure");
+const modelBox = makeApplianceDynamicBoxFromRowAnchor(token, "model");
 const analyserLowRatioBox = makeApplianceDynamicBoxFromRowAnchor(token, "analyserLowRatio");
 const analyserHighRatioBox = makeApplianceDynamicBoxFromRowAnchor(token, "analyserHighRatio");
 const safetyDeviceCorrectBox = makeApplianceDynamicBoxFromRowAnchor(token, "safetyDeviceCorrect");
@@ -2455,8 +2601,9 @@ const visualInspectionOnlyBox = makeApplianceDynamicBoxFromRowAnchor(token, "vis
 
 applianceRows.push({
   visibleRowNumber,
-  applianceType,
-  flueType,
+ applianceType,
+model: getTokenText(modelToken) || getTextFromBox(modelBox),
+flueType,
 flueTypeBox,
   
   co2Low: getTokenText(co2LowToken),
@@ -2484,6 +2631,7 @@ visualInspectionOnly: getTextFromBox(visualInspectionOnlyBox),
   coLowBox: makePatchBoxFromToken(coLowToken),
   coHighBox: makePatchBoxFromToken(coHighToken),
 
+modelBox,
 operatingPressureBox,
 analyserLowRatioBox,
   analyserHighRatioBox,
