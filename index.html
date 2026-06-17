@@ -32,13 +32,14 @@
       box-sizing: border-box;
     }
 
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      padding: 12px;
-    }
+   body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  padding: 12px;
+  overflow-x: hidden;
+}
 
     .container {
       max-width: 1200px;
@@ -198,30 +199,40 @@ textarea {
       border: 1px solid #ffcc80;
     }
 
-    .main-grid {
-      display: grid;
-      grid-template-columns: 1fr 360px;
-      gap: 16px;
-      align-items: start;
-    }
+   .main-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 360px);
+  gap: 16px;
+  align-items: start;
+  width: 100%;
+}
 
-    .viewer-card,
-    .side-card {
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 12px;
-      background: #fff;
-    }
+   .viewer-card,
+.side-card {
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 12px;
+  background: #fff;
+  min-width: 0;
+}
+
+.side-card {
+  max-height: calc(100vh - 24px);
+  overflow-y: auto;
+  position: sticky;
+  top: 12px;
+}
 
     .pdf-stage {
-      width: 100%;
-      overflow: auto;
-      background: #ddd;
-      border-radius: 12px;
-      padding: 10px;
-      max-height: 75vh;
-      text-align: center;
-    }
+  width: 100%;
+  max-width: 100%;
+  overflow: auto;
+  background: #ddd;
+  border-radius: 12px;
+  padding: 10px;
+  max-height: 72vh;
+  text-align: center;
+}
 
     .page-wrap {
       position: relative;
