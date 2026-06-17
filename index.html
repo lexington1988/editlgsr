@@ -594,7 +594,35 @@ button {
       .pdf-stage {
         max-height: 65vh;
       }
+#pullRefreshIndicator {
+  position: fixed;
+  top: 10px;
+  left: 50%;
+  transform: translate(-50%, -70px);
+  z-index: 9999;
+  background: #ffffff;
+  color: var(--primary);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 8px 14px;
+  font-size: 0.9rem;
+  font-weight: bold;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+  opacity: 0;
+  pointer-events: none;
+  transition: transform 0.18s ease, opacity 0.18s ease;
+}
 
+#pullRefreshIndicator.visible {
+  transform: translate(-50%, 0);
+  opacity: 1;
+}
+
+#pullRefreshIndicator.ready {
+  background: #e8f5e9;
+  color: var(--success);
+  border-color: #a5d6a7;
+}
       .issue-actions,
       .adjust-group {
         flex-direction: column;
@@ -605,6 +633,7 @@ button {
 </head>
 
 <body>
+  <div id="pullRefreshIndicator">↓ Pull to refresh</div>
   <div class="container">
     <h1 id="appTitle" title="TM LGSR Checker & Corrector">LGSR Checker & Corrector</h1>
     <p class="subtitle">
@@ -1113,6 +1142,16 @@ pdfUpload.addEventListener("change", loadPDF);
 let pullRefreshStartY = null;
 let pullRefreshReady = false;
 
+function updatePullRefreshIndicator(isVisible, isReady) {
+  const indicator = document.getElementById("pullRefreshIndicator");
+
+  if (!indicator) return;
+
+  indicator.classList.toggle("visible", isVisible);
+  indicator.classList.toggle("ready", isReady);
+  indicator.textContent = isReady ? "Release to refresh" : "↓ Pull to refresh";
+}
+
 document.addEventListener("touchstart", function(event) {
   const target = event.target;
 
@@ -1128,12 +1167,14 @@ document.addEventListener("touchstart", function(event) {
   if (ignorePullRefresh) {
     pullRefreshStartY = null;
     pullRefreshReady = false;
+    updatePullRefreshIndicator(false, false);
     return;
   }
 
-  if (window.scrollY <= 0 && event.touches[0].clientY < 90) {
+  if (window.scrollY <= 0 && event.touches[0].clientY < 120) {
     pullRefreshStartY = event.touches[0].clientY;
     pullRefreshReady = false;
+    updatePullRefreshIndicator(false, false);
   }
 }, { passive: true });
 
@@ -1143,14 +1184,24 @@ document.addEventListener("touchmove", function(event) {
   const currentY = event.touches[0].clientY;
   const pullDistance = currentY - pullRefreshStartY;
 
-  pullRefreshReady = pullDistance > 110;
+  if (pullDistance > 25) {
+    pullRefreshReady = pullDistance > 110;
+    updatePullRefreshIndicator(true, pullRefreshReady);
+  }
 }, { passive: true });
 
 document.addEventListener("touchend", function() {
   if (pullRefreshReady) {
-    window.location.reload();
+    updatePullRefreshIndicator(true, true);
+
+    setTimeout(function() {
+      window.location.reload();
+    }, 150);
+
+    return;
   }
 
+  updatePullRefreshIndicator(false, false);
   pullRefreshStartY = null;
   pullRefreshReady = false;
 });
