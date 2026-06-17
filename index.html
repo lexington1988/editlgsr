@@ -223,14 +223,15 @@ textarea {
   top: 12px;
 }
 
-    .pdf-stage {
+   .pdf-stage {
   width: 100%;
   max-width: 100%;
+  height: calc(100vh - 330px);
+  min-height: 420px;
   overflow: auto;
   background: #ddd;
   border-radius: 12px;
   padding: 10px;
-  max-height: 72vh;
   text-align: center;
 }
 
@@ -1256,10 +1257,22 @@ selectedCorrectionId = null;
       if (!pdfDoc) return;
 
       const page = await pdfDoc.getPage(currentPage);
-      currentViewport = page.getViewport({ scale: renderScale });
 
-      canvas.width = currentViewport.width;
-      canvas.height = currentViewport.height;
+const pdfStage = document.querySelector(".pdf-stage");
+const baseViewport = page.getViewport({ scale: 1 });
+
+const availableWidth = Math.max(300, pdfStage.clientWidth - 20);
+const availableHeight = Math.max(300, pdfStage.clientHeight - 20);
+
+renderScale = Math.min(
+  availableWidth / baseViewport.width,
+  availableHeight / baseViewport.height
+);
+
+currentViewport = page.getViewport({ scale: renderScale });
+
+canvas.width = currentViewport.width;
+canvas.height = currentViewport.height;
 
       await page.render({
         canvasContext: ctx,
