@@ -1915,6 +1915,132 @@ if (
     correction: null
   });
 }
+    if (
+  !ignoredAppliance &&
+  modelContainsLogic(row.model)
+) {
+  const issueBox = row.modelBox;
+
+  detectedIssues.push({
+    id: `appliance-${rowLabel}-logic-model-submodel-required`,
+    type: "fail",
+    title: "Boiler sub-model required",
+    message:
+      "Please enter boiler sub-model - e.g Combi 30 / ESP1 30 etc",
+    currentValue: row.model || "Blank",
+    suggestedValue: "Review boiler sub-model",
+    fixLabel: "",
+    highlight: issueBox
+      ? {
+          page: issueBox.page,
+          x: issueBox.x,
+          y: issueBox.y,
+          width: issueBox.width,
+          height: issueBox.height,
+          label: `Issue ${detectedIssues.length + 1}`
+        }
+      : {
+          page: 1,
+          xPercent: 0.25,
+          yPercent: getApproxApplianceRowY(String(rowNumber)),
+          width: 0.09,
+          height: 0.04,
+          label: `Issue ${detectedIssues.length + 1}`
+        },
+    correction: null
+  });
+}
+    if (
+  !ignoredAppliance &&
+ isWorcester28iJuniorShortModel(row) &&
+  hasHighCombustionReadings(row)
+) {
+  const issueBox = row.modelBox;
+
+  detectedIssues.push({
+    id: `appliance-${rowLabel}-worcester-28i-junior-short-model`,
+    type: "fail",
+    title: "Boiler model may be incorrect",
+    message:
+      "Combustion checks not req on Worcester 28i Junior - please review proper boiler model",
+    currentValue: row.model || "Blank",
+    suggestedValue: "Greenstar 28i Junior",
+    fixLabel: issueBox ? "Apply Greenstar 28i Junior patch" : "",
+    highlight: issueBox
+      ? {
+          page: issueBox.page,
+          x: issueBox.x,
+          y: issueBox.y,
+          width: issueBox.width,
+          height: issueBox.height,
+          label: `Issue ${detectedIssues.length + 1}`
+        }
+      : {
+          page: 1,
+          xPercent: 0.25,
+          yPercent: getApproxApplianceRowY(String(rowNumber)),
+          width: 0.09,
+          height: 0.04,
+          label: `Issue ${detectedIssues.length + 1}`
+        },
+    correction: issueBox
+      ? {
+          page: issueBox.page,
+          text: "Greenstar\n28i Junior",
+          x: issueBox.x - 1,
+      y: issueBox.y - 2,
+          width: Math.max(issueBox.width, 48),
+          height: Math.max(issueBox.height, 16),
+          fontSize: 6,
+          source: `Auto patch: Worcester 28i Junior model row ${rowLabel}`
+        }
+      : null
+  });
+}
+    const isTenantOwnedGasAppliance =
+  row.applianceType === "tenant owned gas appliance";
+
+const flLandlordApplianceSafeToUseNa =
+  !ignoredAppliance &&
+  !isTenantOwnedGasAppliance &&
+  flueType === "FL" &&
+  landlordOwned &&
+  normaliseMappedValue(row.applianceSafeToUse) === "NA";
+
+if (flLandlordApplianceSafeToUseNa) {
+  const issueBox = row.applianceSafeToUseBox;
+
+  detectedIssues.push({
+    id: `appliance-${rowLabel}-fl-landlord-safe-to-use-na`,
+    type: "fail",
+    title: "Appliance safe to use should not be N/A",
+    message:
+      `Appliance row ${rowLabel} (${row.applianceType}) is marked as FL and Landlords appliance is YES, but Appliance safe to use is marked N/A. If the appliance is a landlord appliance, Appliance safe to use should be recorded as YES or NO.`,
+    currentValue: row.applianceSafeToUse || "Blank",
+    suggestedValue: "YES or NO",
+    fixLabel: "",
+    highlight: issueBox
+      ? {
+          page: issueBox.page,
+          x: issueBox.x,
+          y: issueBox.y,
+          width: issueBox.width,
+          height: issueBox.height,
+          label: `Issue ${detectedIssues.length + 1}`
+        }
+      : {
+          page: 1,
+          xPercent: 0.68,
+          yPercent: getApproxApplianceRowY(String(rowNumber)),
+          width: 0.05,
+          height: 0.04,
+          label: `Issue ${detectedIssues.length + 1}`
+        },
+    correction: null
+  });
+
+  return;
+}
 const flFlueWithTechnicalReadings =
   !ignoredAppliance &&
   flueType === "FL" &&
@@ -2695,18 +2821,20 @@ function detectVisibleApplianceRowNumber(text) {
   const clean = String(text || "").replace(/\s+/g, " ").trim();
 
   /*
-    The real visible appliance row number normally appears immediately before
-    the appliance location, for example:
-    1 Kitchen
-    2 External
-    3 Airing Cupboard
-    4 Landing
+    Detect the visible appliance row number by using the appliance type as the
+    anchor, rather than relying on a fixed list of possible locations.
 
-    We deliberately do NOT use a loose "last number found" fallback anymore,
-    because boiler models/readings can contain numbers like 72, 28, 105 etc.
+    Examples this should catch:
+    1 Internal Carbon Monoxide Detector
+    2 External Gas Pipe
+    3 Boiler Room Combi Boiler
+    4 Outhouse Gas Hob
   */
+  const applianceTypePattern =
+    "(Carbon\\s+Monoxide\\s+Detector|Gas\\s+Pipe|Tenant\\s+Owned\\s+Gas\\s+Appliance|Combi\\s+Boiler|Condensing\\s+Boiler|System\\s+Boiler|Heat\\s+Only\\s+Boiler|Back\\s+Boiler|Water\\s+Heater|Gas\\s+Fire|Gas\\s+Hob|Fire|Boiler|Gas\\s+Appliance)";
+
   const rowMatch = clean.match(
-    /(?:^|\s)(\d{1,2})\s+(Kitchen|External|Landing|Hall|Lounge|Bedroom|Bathroom|Garage|Cupboard|Airing\s+Cupboard|Utility|Dining|Conservatory|Unknown)\b/i
+    new RegExp("(?:^|\\s)(\\d{1,2})\\s+.{1,60}?\\s+" + applianceTypePattern + "\\b", "i")
   );
 
   if (rowMatch) {
@@ -2794,6 +2922,47 @@ function isZeroValue(value) {
   const numericValue = Number(raw.replace(/[^\d.-]/g, ""));
 
   return Number.isFinite(numericValue) && numericValue === 0;
+}
+    function modelContainsLogic(model) {
+  return normaliseMappedValue(model).includes("LOGIC");
+}
+  function isWorcester28iJuniorShortModel(row) {
+  const rowText = normaliseText(
+    `${row.model || ""} ${row.nearbyBefore || ""} ${row.nearbyAfter || ""}`
+  );
+
+  const hasWorcester =
+    rowText.includes("worcester") ||
+    rowText.includes("worcester bosch");
+
+  const hasShortJuniorModel =
+    rowText.includes("28i junior") ||
+    rowText.includes("junior 28i");
+
+  const alreadyHasGreenstar =
+    rowText.includes("greenstar");
+
+  return hasWorcester && hasShortJuniorModel && !alreadyHasGreenstar;
+}
+
+function hasHighCombustionReadings(row) {
+  return (
+    hasRealReadingValue(row.co2High) &&
+    hasRealReadingValue(row.coHigh) &&
+    hasRealReadingValue(row.analyserHighRatio)
+  );
+}
+
+function hasRealReadingValue(value) {
+  const clean = normaliseMappedValue(value);
+
+  if (!clean || clean === "NA") {
+    return false;
+  }
+
+  const numericValue = Number(String(value).replace(/[^\d.-]/g, ""));
+
+  return Number.isFinite(numericValue) && numericValue !== 0;
 }
 function hasTechnicalGasReadings(row) {
  const technicalValues = [
