@@ -596,32 +596,44 @@ button {
       }
 #pullRefreshIndicator {
   position: fixed;
-  top: 12px;
+  top: 10px;
   left: 50%;
-  transform: translate(-50%, -60px) rotate(0deg);
+  transform: translate(-50%, -70px);
   z-index: 9999;
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
   background: #ffffff;
   color: var(--primary);
   border: 1px solid var(--border);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.4rem;
+  border-radius: 999px;
+  padding: 8px 14px;
+  font-size: 0.9rem;
   font-weight: bold;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
   opacity: 0;
   pointer-events: none;
-  transition: transform 0.12s ease, opacity 0.12s ease;
+  transition: transform 0.18s ease, opacity 0.18s ease;
 }
+
+#pullRefreshIndicator.visible {
+  transform: translate(-50%, 0);
+  opacity: 1;
+}
+
+#pullRefreshIndicator.ready {
+  background: #e8f5e9;
+  color: var(--success);
+  border-color: #a5d6a7;
+}
+      .issue-actions,
+      .adjust-group {
+        flex-direction: column;
+        align-items: stretch;
+      }
     }
   </style>
 </head>
 
 <body>
- <div id="pullRefreshIndicator">↻</div>
+  <div id="pullRefreshIndicator">↓ Pull to refresh</div>
   <div class="container">
     <h1 id="appTitle" title="TM LGSR Checker & Corrector">LGSR Checker & Corrector</h1>
     <p class="subtitle">
@@ -1130,18 +1142,14 @@ pdfUpload.addEventListener("change", loadPDF);
 let pullRefreshStartY = null;
 let pullRefreshReady = false;
 
-function updatePullRefreshIndicator(isVisible, isReady, pullDistance = 0) {
+function updatePullRefreshIndicator(isVisible, isReady) {
   const indicator = document.getElementById("pullRefreshIndicator");
 
   if (!indicator) return;
 
-  const visibleDistance = Math.min(Math.max(pullDistance, 0), 80);
-  const rotation = Math.min(Math.max(pullDistance * 2, 0), 180);
-
   indicator.classList.toggle("visible", isVisible);
   indicator.classList.toggle("ready", isReady);
-  indicator.style.transform =
-    `translate(-50%, ${isVisible ? visibleDistance - 50 : -60}px) rotate(${rotation}deg)`;
+  indicator.textContent = isReady ? "Release to refresh" : "↓ Pull to refresh";
 }
 
 document.addEventListener("touchstart", function(event) {
@@ -1176,10 +1184,10 @@ document.addEventListener("touchmove", function(event) {
   const currentY = event.touches[0].clientY;
   const pullDistance = currentY - pullRefreshStartY;
 
-  iif (pullDistance > 10) {
-  pullRefreshReady = pullDistance > 110;
-  updatePullRefreshIndicator(true, pullRefreshReady, pullDistance);
-}
+  if (pullDistance > 25) {
+    pullRefreshReady = pullDistance > 110;
+    updatePullRefreshIndicator(true, pullRefreshReady);
+  }
 }, { passive: true });
 
 document.addEventListener("touchend", function() {
