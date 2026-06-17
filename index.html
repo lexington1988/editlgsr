@@ -701,24 +701,24 @@ button {
         <div class="adjust-panel">
           <div class="adjust-group">
             <strong>Selected patch:</strong>
-            <button onclick="nudgeSelected(0, 1)">↑</button>
-            <button onclick="nudgeSelected(0, -1)">↓</button>
-            <button onclick="nudgeSelected(-1, 0)">←</button>
-            <button onclick="nudgeSelected(1, 0)">→</button>
+            <button type="button" onpointerdown="event.preventDefault()" onclick="nudgeSelected(0, 1)">↑</button>
+<button type="button" onpointerdown="event.preventDefault()" onclick="nudgeSelected(0, -1)">↓</button>
+<button type="button" onpointerdown="event.preventDefault()" onclick="nudgeSelected(-1, 0)">←</button>
+<button type="button" onpointerdown="event.preventDefault()" onclick="nudgeSelected(1, 0)">→</button>
           </div>
 
           <div class="adjust-group">
             <strong>Size:</strong>
-            <button onclick="resizeSelected(-2, 0)">W-</button>
-            <button onclick="resizeSelected(2, 0)">W+</button>
-            <button onclick="resizeSelected(0, -1)">H-</button>
-            <button onclick="resizeSelected(0, 1)">H+</button>
+            <button type="button" onpointerdown="event.preventDefault()" onclick="resizeSelected(-2, 0)">W-</button>
+<button type="button" onpointerdown="event.preventDefault()" onclick="resizeSelected(2, 0)">W+</button>
+<button type="button" onpointerdown="event.preventDefault()" onclick="resizeSelected(0, -1)">H-</button>
+<button type="button" onpointerdown="event.preventDefault()" onclick="resizeSelected(0, 1)">H+</button>
           </div>
 
           <div class="adjust-group">
             <strong>Text:</strong>
-            <button onclick="changeFontSize(-1)">A-</button>
-            <button onclick="changeFontSize(1)">A+</button>
+            <button type="button" onpointerdown="event.preventDefault()" onclick="changeFontSize(-1)">A-</button>
+<button type="button" onpointerdown="event.preventDefault()" onclick="changeFontSize(1)">A+</button>
           </div>
         </div>
 
@@ -1110,9 +1110,52 @@ populateMappingFieldDropdown();
 setupAdminUnlock();
 
 pdfUpload.addEventListener("change", loadPDF);
+let pullRefreshStartY = null;
+let pullRefreshReady = false;
 
+document.addEventListener("touchstart", function(event) {
+  const target = event.target;
 
-   pageWrap.addEventListener("click", function(event) {
+  const ignorePullRefresh =
+    target.closest("button") ||
+    target.closest("input") ||
+    target.closest("textarea") ||
+    target.closest(".pdf-stage") ||
+    target.closest(".patch") ||
+    target.closest(".map-box") ||
+    target.closest(".side-card");
+
+  if (ignorePullRefresh) {
+    pullRefreshStartY = null;
+    pullRefreshReady = false;
+    return;
+  }
+
+  if (window.scrollY <= 0 && event.touches[0].clientY < 90) {
+    pullRefreshStartY = event.touches[0].clientY;
+    pullRefreshReady = false;
+  }
+}, { passive: true });
+
+document.addEventListener("touchmove", function(event) {
+  if (pullRefreshStartY === null) return;
+
+  const currentY = event.touches[0].clientY;
+  const pullDistance = currentY - pullRefreshStartY;
+
+  pullRefreshReady = pullDistance > 110;
+}, { passive: true });
+
+document.addEventListener("touchend", function() {
+  if (pullRefreshReady) {
+    window.location.reload();
+  }
+
+  pullRefreshStartY = null;
+  pullRefreshReady = false;
+});
+
+  pageWrap.addEventListener("click", function(event) {
   if (!pdfDoc) return;
 
   if (event.target.classList.contains("map-box") || event.target.classList.contains("map-box-label")) {
@@ -1125,45 +1168,12 @@ pdfUpload.addEventListener("change", loadPDF);
   }
 
   if (event.target.classList.contains("patch")) {
-        selectedCorrectionId = event.target.dataset.id;
-        renderCorrectionPatches();
-        updateCorrectionList();
-        return;
-      }
-
-      const text = document.getElementById("correctionText").value.trim();
-
-      if (!text) {
-        showStatus("Type the correction text first, then click the PDF cell.", "warning");
-        return;
-      }
-
-      const position = getPdfPositionFromClick(event);
-
-      if (!position) return;
-
-      const patchWidth = Number(document.getElementById("patchWidth").value) || 30;
-      const patchHeight = Number(document.getElementById("patchHeight").value) || 10;
-      const fontSize = Number(document.getElementById("fontSize").value) || 7;
-
-      const newPatch = addCorrection({
-  page: currentPage,
-  text,
-  x: position.pdfX - patchWidth / 2,
-  y: position.pdfY - patchHeight / 2,
-  width: patchWidth,
-  height: patchHeight,
-  fontSize,
-  source: "Manual patch"
+    selectedCorrectionId = event.target.dataset.id;
+    renderCorrectionPatches();
+    updateCorrectionList();
+    return;
+  }
 });
-
-resolveIssuesCoveredByPatch(newPatch);
-
-renderIssues(detectedIssues);
-renderIssueHighlights();
-
-showStatus("Correction patch added.", "success");
-    });
 
     function createPatchFromInputsAtCenter() {
       if (!pdfDoc || !currentViewport) {
@@ -4060,38 +4070,59 @@ showStatus("Patch position updated.", "success");
 
       return correction;
     }
+function preservePdfStageScroll(callback) {
+  const pdfStage = document.querySelector(".pdf-stage");
 
+  if (!pdfStage) {
+    callback();
+    return;
+  }
+
+  const scrollLeft = pdfStage.scrollLeft;
+  const scrollTop = pdfStage.scrollTop;
+
+  callback();
+
+  pdfStage.scrollLeft = scrollLeft;
+  pdfStage.scrollTop = scrollTop;
+}
     function nudgeSelected(dx, dy) {
-      const correction = getSelectedCorrection();
-      if (!correction) return;
+  preservePdfStageScroll(() => {
+    const correction = getSelectedCorrection();
+    if (!correction) return;
 
-      correction.x += dx;
-      correction.y += dy;
+    correction.x += dx;
+    correction.y += dy;
 
-      renderCorrectionPatches();
-      updateCorrectionList();
-    }
+    renderCorrectionPatches();
+    updateCorrectionList();
+  });
+}
 
     function resizeSelected(dw, dh) {
-      const correction = getSelectedCorrection();
-      if (!correction) return;
+  preservePdfStageScroll(() => {
+    const correction = getSelectedCorrection();
+    if (!correction) return;
 
-      correction.width = Math.max(5, correction.width + dw);
-      correction.height = Math.max(5, correction.height + dh);
+    correction.width = Math.max(5, correction.width + dw);
+    correction.height = Math.max(5, correction.height + dh);
 
-      renderCorrectionPatches();
-      updateCorrectionList();
-    }
+    renderCorrectionPatches();
+    updateCorrectionList();
+  });
+}
 
-    function changeFontSize(delta) {
-      const correction = getSelectedCorrection();
-      if (!correction) return;
+   function changeFontSize(delta) {
+  preservePdfStageScroll(() => {
+    const correction = getSelectedCorrection();
+    if (!correction) return;
 
-      correction.fontSize = Math.max(4, correction.fontSize + delta);
+    correction.fontSize = Math.max(4, correction.fontSize + delta);
 
-      renderCorrectionPatches();
-      updateCorrectionList();
-    }
+    renderCorrectionPatches();
+    updateCorrectionList();
+  });
+}
 
     async function saveCorrectedPDF() {
       if (!originalPdfBytes) {
