@@ -32,14 +32,13 @@
       box-sizing: border-box;
     }
 
-   body {
-  margin: 0;
-  font-family: Arial, sans-serif;
-  background: var(--bg);
-  color: var(--text);
-  padding: 12px;
-  overflow-x: hidden;
-}
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      padding: 12px;
+    }
 
     .container {
       max-width: 1200px;
@@ -199,41 +198,30 @@ textarea {
       border: 1px solid #ffcc80;
     }
 
-   .main-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(300px, 360px);
-  gap: 16px;
-  align-items: start;
-  width: 100%;
-}
+    .main-grid {
+      display: grid;
+      grid-template-columns: 1fr 360px;
+      gap: 16px;
+      align-items: start;
+    }
 
-   .viewer-card,
-.side-card {
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  padding: 12px;
-  background: #fff;
-  min-width: 0;
-}
+    .viewer-card,
+    .side-card {
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 12px;
+      background: #fff;
+    }
 
-.side-card {
-  max-height: calc(100vh - 24px);
-  overflow-y: auto;
-  position: sticky;
-  top: 12px;
-}
-
-   .pdf-stage {
-  width: 100%;
-  max-width: 100%;
-  height: calc(100vh - 330px);
-  min-height: 420px;
-  overflow: auto;
-  background: #ddd;
-  border-radius: 12px;
-  padding: 10px;
-  text-align: center;
-}
+    .pdf-stage {
+      width: 100%;
+      overflow: auto;
+      background: #ddd;
+      border-radius: 12px;
+      padding: 10px;
+      max-height: 75vh;
+      text-align: center;
+    }
 
     .page-wrap {
       position: relative;
@@ -1257,22 +1245,10 @@ selectedCorrectionId = null;
       if (!pdfDoc) return;
 
       const page = await pdfDoc.getPage(currentPage);
+      currentViewport = page.getViewport({ scale: renderScale });
 
-const pdfStage = document.querySelector(".pdf-stage");
-const baseViewport = page.getViewport({ scale: 1 });
-
-const availableWidth = Math.max(300, pdfStage.clientWidth - 20);
-const availableHeight = Math.max(300, pdfStage.clientHeight - 20);
-
-renderScale = Math.min(
-  availableWidth / baseViewport.width,
-  availableHeight / baseViewport.height
-);
-
-currentViewport = page.getViewport({ scale: renderScale });
-
-canvas.width = currentViewport.width;
-canvas.height = currentViewport.height;
+      canvas.width = currentViewport.width;
+      canvas.height = currentViewport.height;
 
       await page.render({
         canvasContext: ctx,
